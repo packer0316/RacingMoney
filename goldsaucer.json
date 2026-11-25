@@ -1,0 +1,8 @@
+{
+  "entry": "index.html",
+  "server": "server/room.js",
+  "functions": "server/functions.js",
+  "cover": "cover.jpg",
+  "orientation": "landscape",
+  "aspectRatio": 1.7778
+}

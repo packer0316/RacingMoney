@@ -1,0 +1,220 @@
+/* 線上功能：玩家積分、賽道紀錄 / 排行榜、多人房間、比賽中的名次與倒數 (沿用 menu.css 的色票) */
+
+/* ---- 車庫：玩家資訊、賽道紀錄、多人連線按鈕 */
+.profile-chip { margin-left: auto; margin-right: 10px; height: 46px; display: inline-flex; align-items: center; gap: 9px; padding: 0 16px; background: #ffffff05; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; color: #c9d2cd; max-width: 46vw; }
+.profile-chip:hover { background: #ffffff12; border-color: #ffffff40; }
+.music-player + .profile-chip { margin-left: 0; }
+@media (max-width: 640px) and (min-height: 481px) { .music-player + .profile-chip { margin-left: auto; } }
+.profile-chip .icon { width: 18px; height: 18px; color: var(--acc); }
+.profile-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-chip b { color: var(--acc); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 目前選的地圖：紀錄保持人與他的時間 (在地圖卡片上方) */
+.map-block { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.record-holder { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 8px 14px; background: #171e20e6; border: 1px solid #d8f98a44; border-radius: 10px; font-size: 14px; color: #c9d2cd; text-align: left; }
+.record-holder:hover { border-color: var(--acc); }
+.record-holder .icon { width: 18px; height: 18px; color: var(--acc); }
+.record-holder .rh-label { font-size: 11px; letter-spacing: 1px; color: var(--dim); white-space: nowrap; }
+.record-holder b { flex: 1; min-width: 0; font-weight: 500; font-size: 15px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-holder.none b { color: #7f8b8c; font-size: 13px; }
+.record-holder .rh-time { font-size: 17px; color: var(--acc); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 回到車庫時把行車 HUD (分區小畫布) 一起藏起來 */
+#hud.hidden ~ canvas:not(.car-transition) { visibility: hidden; }
+.mp-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 46px; margin-bottom: 8px; border: 1px solid #d8f98a55; border-radius: 9px; background: #d8f98a10; color: var(--acc); font-size: 16px; letter-spacing: 3px; }
+.mp-button:hover:not(:disabled) { background: #d8f98a22; border-color: var(--acc); }
+.mp-button .icon { width: 20px; height: 20px; }
+#startBtn { gap: 12px; font-size: 21px; letter-spacing: 3px; }
+#startBtn .icon { width: 19px; }
+#menu.in-room .menu-bottom { visibility: hidden; }
+#menu.in-room .menu-bottom > * { pointer-events: none; }
+@media (min-width: 641px) and (min-height: 481px) {
+  #menu.in-room .car-performance { left: 42px; right: auto; }
+}
+
+/* ---- 房間面板 (在車庫右側；左邊仍可換車、換色) */
+.room-panel { position: absolute; z-index: 3; right: 42px; bottom: 62px; width: 340px; max-height: calc(100% - 170px); overflow: auto; background: #171e20f2; border: 1px solid #ffffff24; border-radius: 14px; padding: 20px; box-shadow: 0 20px 80px #0008; }
+.room-title h3 { margin: 6px 0 4px; font-size: 22px; font-weight: 500; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-title p { margin: 0 0 14px; font-size: 12px; color: var(--dim); line-height: 1.6; }
+.room-title .eyebrow { font-size: 10px; letter-spacing: 3px; }
+.rp-players { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rp-players li { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #ffffff04; font-size: 14px; }
+.rp-players li.empty { color: #5f6b6c; border-style: dashed; justify-content: center; font-size: 12px; }
+.rp-players li.me { border-color: #d8f98a55; }
+.rp-players .who { flex: 1; min-width: 0; }
+.rp-players .who b { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-players .who small { color: var(--dim); font-size: 11px; }
+.rp-players .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffffff30; flex-shrink: 0; }
+.rp-players .st { font-size: 11px; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
+.rp-players .st.ok { color: #20291a; background: var(--acc); border-color: var(--acc); }
+.rp-players .st.host { color: var(--acc); border-color: #d8f98a66; }
+.rp-players .kick { border: 0; background: none; color: #7f8b8c; font-size: 16px; padding: 0 2px; line-height: 1; }
+.rp-players .kick:hover { color: #ff9a8b; }
+.rp-hint { min-height: 18px; margin: 12px 0 2px; font-size: 12px; color: var(--dim); line-height: 1.6; }
+.rp-actions .btn { margin-top: 8px; padding: 12px; font-size: 15px; }
+.rp-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---- 對話框：紀錄與排行、多人連線 */
+.board-dialog { width: 520px; }
+.rooms-dialog { width: 860px; }
+.tabs { margin-bottom: 18px; }
+.tabs button { flex: 1; }
+.board-tracks { margin-bottom: 8px; }
+.board-dirs { margin-bottom: 14px; }
+.rank-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 5px; }
+.rank-list li { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 7px; background: #ffffff05; border: 1px solid transparent; font-size: 14px; }
+.rank-list li.me { border-color: #d8f98a66; background: #d8f98a0c; }
+.rank-list li.empty { color: #5f6b6c; justify-content: flex-start; }
+.rank-list .no { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #ffffff0d; font-size: 12px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.rank-list li:nth-child(1) .no { background: var(--acc); color: #20291a; }
+.rank-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-list .nm small { color: var(--dim); font-size: 11px; margin-left: 8px; }
+.rank-list .val { font-variant-numeric: tabular-nums; color: var(--acc); white-space: nowrap; }
+.note { font-size: 12px; color: var(--dim); line-height: 1.7; margin: 0 0 12px; }
+.gate { font-size: 14px; color: #c9d2cd; line-height: 1.8; margin: 0 0 8px; padding: 16px; border: 1px dashed #ffffff30; border-radius: 10px; }
+#roomsBody { display: grid; grid-template-columns: 1fr 330px; gap: 26px; align-items: start; }
+#roomsBody.edit { grid-template-columns: 1fr; }
+#roomsBody.edit #roomsListBox { display: none; }
+.rooms-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #c2cbc7; }
+.rooms-head strong, .room-form > strong { font-weight: 500; }
+.link-button { border: 0; background: none; color: var(--acc); font-size: 12px; padding: 4px 0; }
+.room-list { display: grid; gap: 8px; max-height: 420px; overflow: auto; }
+.room-list .none { padding: 30px 14px; text-align: center; color: #6c7879; font-size: 13px; border: 1px dashed #ffffff22; border-radius: 10px; line-height: 1.8; }
+.room-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #ffffff04; }
+.room-row .inf { flex: 1; min-width: 0; }
+.room-row .inf b { display: block; font-weight: 500; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-row .inf small { display: block; color: var(--dim); font-size: 11px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-row .cnt { font-size: 14px; color: var(--acc); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.room-row .join { border: 0; background: var(--acc); color: #232d1c; padding: 9px 18px; border-radius: 6px; font-size: 14px; white-space: nowrap; }
+.room-row .join:disabled { background: #ffffff10; color: #7f8b8c; cursor: not-allowed; }
+.room-form { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #ffffff03; font-size: 14px; color: #c2cbc7; }
+.room-form .field { display: grid; gap: 7px; }
+.room-form .field > span { font-size: 12px; color: var(--dim); }
+.room-form .field small { font-size: 11px; color: var(--dim); line-height: 1.5; }
+.room-form input[type=text] { width: 100%; padding: 10px 12px; background: #0e1315; border: 1px solid #ffffff22; border-radius: 6px; color: var(--fg); font-size: 15px; }
+.room-form input[type=text]:focus { border-color: var(--acc); outline: none; }
+.room-form .opts button { padding: 7px 11px; font-size: 13px; }
+.room-form .small-primary { padding: 13px; font-size: 15px; }
+.room-form .small-primary:disabled { opacity: .5; }
+
+/* ---- 結算：積分、賽道紀錄、多人名次 */
+.res-score { margin: 16px 0 0; padding: 14px; border: 1px solid #d8f98a44; border-radius: 10px; background: #d8f98a0a; font-size: 13px; color: #c9d2cd; line-height: 1.7; }
+.res-score .gain { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.res-score .gain b { font-size: 26px; color: var(--acc); font-weight: 500; font-variant-numeric: tabular-nums; }
+.res-score .parts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.res-score .parts span { font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--line); color: #b3beb9; }
+.res-score .parts span.neg { color: #ff9a8b; }
+.res-score .badge { color: var(--acc); }
+.res-sub { margin: 16px 0 8px; font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+#results .rank-list { margin-bottom: 0; }
+#results .rank-list li { padding: 7px 10px; font-size: 13px; }
+
+/* ---- 比賽中：名次、倒數、名牌 */
+.mp-hud { position: fixed; inset: 0; z-index: 4; pointer-events: none; font-family: inherit; }
+.mp-rank { position: absolute; left: 14px; top: 54%; transform: translateY(-50%); min-width: 150px; padding: 10px 14px; background: #080a0c80; border-radius: 8px; color: #fff; }
+.mp-pos b { font-size: 46px; font-weight: 600; line-height: 1; color: #ffd34a; font-style: italic; }
+.mp-pos span { font-size: 16px; color: #cfd6dc; margin-left: 6px; }
+.mp-rank ol { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; display: grid; gap: 3px; }
+.mp-rank li { display: flex; gap: 8px; color: #cfd6dc; white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+.mp-rank li.me { color: #ffd34a; }
+.mp-rank li i { font-style: normal; width: 14px; color: #8a959b; }
+.mp-rank li em { font-style: normal; color: #7dffa0; margin-left: auto; padding-left: 8px; }
+/* 起跑倒數 (個人計時賽與多人房共用，js/game/start.js)：畫面中央的 3、2、1、START 與彈射起步的判定 */
+.start-center { position: fixed; z-index: 4; pointer-events: none; left: 50%; top: 34%; transform: translate(-50%, -50%); text-align: center; color: #fff; font-weight: 700; font-style: italic; text-shadow: 0 4px 0 #000a, 0 0 30px #000c; white-space: nowrap; }
+.start-center:empty, .start-note:empty { display: none; }
+.start-center.num { font-size: clamp(110px, 22vh, 220px); color: #ffd34a; animation: mp-pop .9s ease-out; }
+.start-center.go { font-size: clamp(90px, 18vh, 180px); color: #7dffa0; animation: mp-pop .9s ease-out; }
+.start-center.wait { font-size: 26px; font-style: normal; font-weight: 500; padding: 14px 26px; background: #080a0c99; border-radius: 10px; text-shadow: none; }
+.start-center.wait small { display: block; font-size: 13px; font-weight: 400; color: #cfd6dc; margin-top: 6px; }
+@keyframes mp-pop { 0% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; } 18% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(.96); opacity: .92; } }
+.start-note { position: fixed; z-index: 4; pointer-events: none; left: 50%; top: calc(34% + clamp(72px, 14vh, 140px)); transform: translateX(-50%); padding: 6px 22px; border-radius: 24px; background: #080a0cb0; font-size: clamp(18px, 3.4vh, 30px); font-weight: 700; white-space: nowrap; }
+.start-note.hit { color: #ffb347; box-shadow: 0 0 26px #ff8a2a99; animation: start-hit .35s ease-out; }
+.start-note.miss { color: #ff9a9a; }
+@keyframes start-hit { 0% { transform: translateX(-50%) scale(1.6); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
+.mp-note { position: absolute; left: 50%; top: 118px; transform: translateX(-50%); padding: 6px 16px; background: #080a0c99; border-radius: 20px; color: #ffd34a; font-size: 15px; white-space: nowrap; }
+.mp-note:empty { display: none; }
+.mp-tag { position: absolute; left: 0; top: 0; padding: 2px 9px 3px; border-radius: 4px; background: #080a0cb0; color: #fff; font-size: 12px; white-space: nowrap; will-change: transform; border-bottom: 2px solid #4ad0ff; }
+.mp-tag small { color: #9fe8ff; margin-left: 6px; font-size: 11px; }
+/* ---- 紀錄視窗：看重播 ▶ */
+.rank-list .rv-watch { flex-shrink: 0; width: 30px; height: 26px; display: grid; place-items: center; padding: 0; border: 1px solid #d8f98a55; border-radius: 6px; background: #d8f98a14; color: var(--acc); font-size: 11px; }
+.rank-list button.rv-watch:hover { background: var(--acc); color: #20291a; }
+.rank-list button.rv-watch:disabled { opacity: .5; cursor: wait; }
+.rank-list .rv-watch.none { border-color: transparent; background: none; }
+.rank-list .rv-watch.rv-ghost { width: 42px; margin-left: 4px; border-color: #9fe8ff55; background: #9fe8ff14; color: #9fe8ff; font-size: 12px; }
+.rank-list button.rv-watch.rv-ghost:hover { background: #9fe8ff; color: #12262c; }
+/* ---- 挑戰 (幽靈車)：上方的資訊列沿用重播的樣式 (.rv-top)，幽靈車頭上的名牌 */
+.ghost-ui { z-index: 4; }
+.rv-tag.gh { background: #9fe8ff; color: #12262c; letter-spacing: 1px; }
+.gh-gap { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gh-gap:empty { display: none; }
+.gh-gap.ahead, .gh-res.ahead { color: #7dffa0; }
+.gh-gap.behind, .gh-res.behind { color: #ff8a8a; }
+.gh-tag { border-bottom-color: #9fe8ff; background: #080a0c80; color: #dff7ff; }
+/* ---- 看重播 (js/game/replay.js)：上方是誰的紀錄，播放控制列在氮氣集氣條上方 (右下留給儀表板；--hs = HUD 縮放，由 replay.js 設定) */
+.replay-ui { --hs: 1; position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+.replay-ui button, .replay-ui input { pointer-events: auto; }
+.rv-top { position: absolute; left: 50%; top: calc(var(--hs) * 104px); transform: translateX(-50%); display: flex; align-items: baseline; gap: 10px; max-width: 72vw; padding: 6px 16px; border-radius: 20px; background: #080a0c99; color: #fff; white-space: nowrap; }
+.rv-tag { font-size: 11px; font-weight: 700; letter-spacing: 3px; padding: 2px 8px; border-radius: 4px; background: var(--acc); color: #20291a; }
+.rv-top b { font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.rv-top small { font-size: 13px; color: #cfd6dc; overflow: hidden; text-overflow: ellipsis; }
+.rv-bar { position: absolute; left: 16px; right: calc(var(--hs) * 432px + 16px); bottom: calc(var(--hs) * 96px + 6px); display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #ffffff1c; border-radius: 12px; background: #080a0cc4; color: #fff; }
+.rv-btn { flex-shrink: 0; height: 36px; padding: 0 12px; border: 1px solid #ffffff2a; border-radius: 8px; background: #ffffff0d; color: var(--fg); font-size: 13px; white-space: nowrap; }
+.rv-btn:hover { background: #ffffff1c; border-color: #ffffff55; }
+.rv-btn.play { width: 44px; padding: 0; font-size: 15px; background: var(--acc); border-color: var(--acc); color: #20291a; }
+.rv-time { font-size: 15px; color: var(--acc); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rv-time.dim { color: var(--dim); }
+#rvSeek { flex: 1; min-width: 80px; accent-color: var(--acc); }
+.rv-speed { flex-shrink: 0; display: flex; overflow: hidden; border: 1px solid #ffffff2a; border-radius: 8px; }
+.rv-speed button { height: 34px; padding: 0 9px; border: 0; background: transparent; color: #cfd6dc; font-size: 12px; }
+.rv-speed button.on { background: var(--acc); color: #20291a; }
+.rv-keys { position: absolute; left: 18px; bottom: calc(var(--hs) * 96px + 68px); font-size: 11px; color: #ffffffa8; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.rv-end { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); min-width: 280px; display: grid; justify-items: center; gap: 8px; padding: 20px 28px; border: 1px solid #d8f98a55; border-radius: 14px; background: #101416e6; box-shadow: 0 20px 60px #000a; pointer-events: auto; }
+.rv-end b { font-size: 44px; font-weight: 600; color: var(--acc); font-variant-numeric: tabular-nums; }
+.rv-end-btns { display: flex; gap: 10px; width: 100%; }
+.rv-end-btns .btn { margin-top: 4px; padding: 11px; font-size: 15px; }
+@media (max-width: 760px) {
+  .rv-bar { right: 12px; left: 12px; bottom: calc(var(--hs) * 250px); flex-wrap: wrap; gap: 8px; }
+  #rvSeek { order: 9; flex-basis: 100%; }
+  .rv-keys { display: none; }
+  .rv-top { max-width: 92vw; }
+}
+.toast { position: fixed; z-index: 60; left: 50%; bottom: 13%; transform: translateX(-50%); max-width: 86vw; padding: 12px 22px; background: #171e20f5; border: 1px solid #ffffff30; border-radius: 10px; color: var(--fg); font-size: 14px; box-shadow: 0 10px 40px #0009; text-align: center; }
+
+@media (min-width: 1500px) { .room-panel { right: 60px; width: 370px; } }
+@media (max-width: 1050px) { .room-panel { right: 26px; width: 310px; } .rooms-dialog { width: 96vw; } }
+@media (max-width: 760px) {
+  #roomsBody { grid-template-columns: 1fr; }
+  .room-list { max-height: 240px; }
+}
+@media (max-width: 640px) {
+  .profile-chip { height: 42px; padding: 0 11px; font-size: 12px; gap: 6px; margin-right: 8px; }
+  .profile-chip span { display: none; }
+  .mp-button { height: 40px; font-size: 13px; letter-spacing: 1px; gap: 6px; margin-bottom: 6px; }
+  .mp-button .icon { width: 16px; height: 16px; }
+  #startBtn { font-size: 14px; letter-spacing: 1px; gap: 6px; height: 62px; } #startBtn .icon { display: none; }
+  /* 地圖卡片上方多了紀錄保持人那一列：車色列與展示台往上讓 */
+  .car-controls { bottom: 256px; } .showroom { bottom: 332px; }
+  .map-block { flex: 1; gap: 7px; } .map-block .map-preview { width: 100%; flex: none; }
+  .record-holder { min-height: 34px; padding: 5px 9px; gap: 6px; font-size: 12px; border-radius: 8px; } .record-holder .rh-label { display: none; } .record-holder b { font-size: 12px; } .record-holder .rh-time { font-size: 13px; } .record-holder .icon { width: 14px; height: 14px; }
+  .room-panel { left: 18px; right: 18px; width: auto; bottom: 46px; max-height: 58%; padding: 14px; }
+  .mp-rank { top: 40%; padding: 8px 10px; min-width: 110px; }
+  .mp-pos b { font-size: 34px; }
+  .mp-rank ol { font-size: 11px; }
+}
+@media (max-height: 480px) and (min-width: 641px) {
+  .mp-button { height: 34px; font-size: 13px; margin-bottom: 5px; }
+  #startBtn { font-size: 16px; height: 52px; letter-spacing: 2px; }
+  .map-block { gap: 5px; } .record-holder { min-height: 28px; padding: 3px 9px; font-size: 12px; } .record-holder .rh-label { display: none; } .record-holder b { font-size: 12px; } .record-holder .rh-time { font-size: 13px; }
+  /* 手機橫向：房間面板壓扁，三個按鈕排成一列 */
+  .room-panel { top: 52px; bottom: 34px; max-height: none; width: 330px; padding: 12px 14px; display: flex; flex-direction: column; }
+  .room-panel.hidden { display: none; }
+  .room-title .eyebrow { display: none; } .room-title h3 { font-size: 17px; margin: 0 0 2px; } .room-title p { margin-bottom: 8px; font-size: 11px; }
+  .rp-players { gap: 4px; } .rp-players li { min-height: 34px; padding: 3px 8px; font-size: 13px; } .rp-players li.empty { min-height: 24px; font-size: 11px; }
+  .rp-hint { margin: 6px 0 0; font-size: 11px; min-height: 0; }
+  .rp-actions { display: flex; gap: 6px; margin-top: auto; } .rp-actions .btn { flex: 1; margin-top: 6px; padding: 9px 4px; font-size: 13px; }
+  .mp-rank { top: 50%; }
+}
+@media (max-height: 700px) and (max-width: 640px) { .car-controls { bottom: 230px; } .showroom { bottom: 290px; } }
+/* 很小的橫向畫面 (例如手機直拿時的 16:9 播放框)：紀錄保持人疊在地圖卡片右上角 */
+@media (max-height: 480px) and (max-width: 640px) {
+  .map-block { position: relative; display: block; } .car-controls { bottom: 188px; } .showroom { bottom: 248px; }
+  .record-holder { position: absolute; z-index: 2; top: 6px; right: 6px; width: auto; max-width: 62%; min-height: 26px; padding: 3px 8px; background: #101416d9; }
+}

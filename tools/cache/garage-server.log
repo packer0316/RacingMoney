@@ -1,0 +1,12 @@
+山道猴王 本機平台模擬器
+  玩家 1：http://localhost:8765/?user=%E5%B0%8F%E6%98%8E
+  玩家 2：http://localhost:8765/?user=%E9%98%BF%E8%8F%AF   (另開分頁，user 不同就是不同玩家)
+  訪客  ：http://localhost:8765/?guest=1
+  沙箱  ：http://localhost:8765/play?user=%E5%B0%8F%E6%98%8E   (和平台一樣包在沙箱 iframe 裡)
+  目前資料：http://localhost:8765/__gs/state
+[room 1] 開房 dev0-c8841c348712
+[room 1] GarageQA 加入 (1/4)
+[room 1] GarageQA 離開 (0/4)
+[room 2] 開房 dev0-bbb9e7941480
+[room 2] GarageQA 加入 (1/4)
+[room 2] GarageQA 離開 (0/4)

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101416">
+<title>山道猴王：操作同跑跑卡D車</title>
+<link rel="stylesheet" href="css/menu.css">
+<link rel="stylesheet" href="css/online.css">
+</head>
+<!-- data-gs-fit-ignore：金碟平台會在遊戲頁注入 fit.js，量畫面上元素的範圍 (含 transform、小數像素) 來放大遊戲 iframe。
+     這個遊戲永遠剛好填滿視窗，不需要平台放大；不關掉的話，換車滑動時 iframe 會被越撐越寬，比賽中也會每次 +1 px 越來越高 (畫面被拉長) -->
+<body data-gs-fit-ignore>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3-.6 2.2-2 .9-2-.6-2 3.5L4 10.6v2.8l-1.6 1.6 2 3.5 2-.6 2 .9L9 21h6l.6-2.2 2-.9 2 .6 2-3.5-1.6-1.6v-2.8L21.6 9l-2-3.5-2 .6-2-.9L15 3Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+<symbol id="i-track-prev" viewBox="0 0 24 24"><path d="M5 5v14"/><path d="m18 5-10 7 10 7Z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-track-next" viewBox="0 0 24 24"><path d="M19 5v14"/><path d="m6 5 10 7-10 7Z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3ZM9 3v15M15 6v15"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1.1-1.5 2.5M12 17h.01"/></symbol>
+<symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 9a8 8 0 1 0-1 8M20 4v5h-5"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0ZM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 13v4M8.5 20h7M10 17h4v3h-4Z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5.2a3.2 3.2 0 0 1 0 5.6M17.5 14.3c2.1.7 3.5 2.6 3.5 5.2"/></symbol>
+</defs></svg>
+<div id="menuBackdrop" class="menu-backdrop" aria-hidden="true"><div class="route-backdrop" data-route="sprint"></div><div class="route-backdrop" data-route="drift"></div></div>
+<canvas id="gl" aria-hidden="true"></canvas><canvas id="hud" aria-hidden="true"></canvas><div id="flash"></div>
+<main id="menu" class="menu">
+  <header class="menu-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><b>山道<span>猴王</span></b><small>操作同跑跑卡D車 · 北宜公路</small></div></div>
+    <div id="musicPlayer" class="music-player" role="group" aria-label="背景音樂播放器">
+      <button id="prevTrack" class="music-step" data-music-step="-1" aria-label="上一首" title="上一首"><svg class="icon" aria-hidden="true"><use href="#i-track-prev"/></svg></button>
+      <div id="musicTrack" class="music-track" role="status" aria-live="polite" aria-atomic="true"><div class="music-marquee"><span id="musicTitle">Midnight Run · Evan Vale</span><span id="musicTitleCopy" aria-hidden="true">Midnight Run · Evan Vale</span></div></div>
+      <button id="nextTrack" class="music-step" data-music-step="1" aria-label="下一首" title="下一首"><svg class="icon" aria-hidden="true"><use href="#i-track-next"/></svg></button>
+    </div>
+    <button id="profileBtn" class="profile-chip" aria-label="我的積分與排行榜" title="紀錄與排行榜"><svg class="icon"><use href="#i-trophy"/></svg><span id="profileName">—</span><b id="profileScore"></b></button>
+    <button id="settingsBtn" class="icon-button settings-button" data-open="settingsDialog" aria-label="開啟設定" title="設定"><svg class="icon"><use href="#i-gear"/></svg><span>設定</span></button>
+  </header>
+  <section class="car-heading" aria-live="polite"><div id="carMake" class="eyebrow">HONDA</div><h1 id="carName">CIVIC <em>K8</em></h1><p id="carSpecs">1.6 L <span>125 PS</span> FF</p></section>
+  <section id="carPerformance" class="car-performance" aria-labelledby="performanceTitle">
+    <div class="performance-header"><h2 id="performanceTitle">車輛性能</h2><span>PERFORMANCE</span></div>
+    <div id="performanceStats" class="performance-stats"></div>
+    <p id="carCharacter" class="car-character"></p>
+  </section>
+  <div id="showroom" class="showroom" tabindex="0" role="group" aria-label="3D 車輛預覽，可拖曳旋轉或使用左右方向鍵"><span id="previewStatus" class="preview-status" role="status">正在準備車庫…</span></div>
+  <button id="prevCar" class="icon-button car-step previous" aria-label="上一台車"><svg class="icon"><use href="#i-left"/></svg></button>
+  <button id="nextCar" class="icon-button car-step next" aria-label="下一台車"><svg class="icon"><use href="#i-right"/></svg></button>
+  <section class="car-controls" aria-label="選擇車色"><div class="rotate-hint"><svg class="icon"><use href="#i-rotate"/></svg><span>拖曳旋轉</span></div><div id="carList" hidden></div><div id="carPosition" class="car-position" aria-label="目前車款"><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="paintList" class="paint-list" aria-label="車色"></div></section>
+  <div class="menu-bottom">
+    <div class="map-block"><button id="recordsBtn" class="record-holder" aria-label="這張地圖的紀錄保持人，按一下看前 15 名" title="看前 15 名"><svg class="icon"><use href="#i-trophy"/></svg><span class="rh-label">紀錄保持人</span><b id="recordName">—</b><span id="recordTime" class="rh-time"></span></button>
+    <button id="mapBtn" class="map-preview" data-open="mapDialog" aria-label="選擇地圖"><canvas id="selectedMap" width="640" height="300" aria-hidden="true"></canvas><span class="map-top"><span><svg class="icon"><use href="#i-map"/></svg>選擇地圖</span><span class="map-badge">台 9 線</span></span><span class="map-caption"><span><strong id="selectedMapName">彎道衝刺</strong><small id="selectedMapLocation">石碇 · 坪林</small></span><span id="selectedMapDistance" class="map-distance">2.1 <small>km</small></span></span></button></div>
+    <div class="launch-block"><button id="conditionsBtn" class="conditions" data-open="mapDialog" aria-label="調整天氣與行駛方向"><svg class="icon"><use href="#i-sun"/></svg><span id="conditionText">晴天 · 往宜蘭</span></button><button id="mpBtn" class="mp-button" disabled><svg class="icon"><use href="#i-users"/></svg><span>多人連線</span></button><button id="startBtn" disabled><svg class="icon"><use href="#i-play"/></svg><span id="startLabel">準備中</span></button><div id="loadStatus" class="load" role="status"><div class="bar"><div id="loadbar"></div></div><div id="loadtext">準備中…</div></div></div>
+  </div>
+  <footer class="menu-footer"><button class="help-button" data-open="helpDialog"><svg class="icon"><use href="#i-help"/></svg>操作指南</button><span>北宜，下一個彎見。</span><span class="footer-route">24° N &nbsp; 121° E</span></footer>
+  <aside id="roomPanel" class="room-panel hidden" aria-label="多人房間">
+    <div class="room-title"><span class="eyebrow">ROOM · 最多 4 人</span><h3 id="rpName">房間</h3><p id="rpInfo"></p></div>
+    <ol id="rpPlayers" class="rp-players"></ol>
+    <p id="rpHint" class="rp-hint"></p>
+    <div class="rp-actions"><button id="rpReady" class="btn">準備</button><button id="rpCfg" class="btn alt">房間設定</button><button id="rpLeave" class="btn alt">離開房間</button></div>
+  </aside>
+</main>
+<dialog id="mapDialog" class="dialog map-dialog" aria-labelledby="mapTitle">
+  <div class="dialog-header"><div><span class="eyebrow">EXPLORE ROUTE 9</span><h2 id="mapTitle">選一段，出發。</h2></div><button class="icon-button" data-close aria-label="關閉地圖"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div id="mapList" class="map-list" aria-label="地圖路段"></div>
+  <div class="route-options"><fieldset><legend>行駛方向</legend><div class="opts"><button data-opt="dir" data-val="1">往宜蘭</button><button data-opt="dir" data-val="-1">往台北</button></div></fieldset><fieldset><legend>天氣與時段</legend><div class="opts weather"><button data-opt="env" data-val="sunny">晴天</button><button data-opt="env" data-val="fog">山霧</button><button data-opt="env" data-val="dusk">黃昏</button><button data-opt="env" data-val="night">夜晚</button><button data-opt="env" data-val="rain">雨天</button></div></fieldset></div>
+  <div class="dialog-footer"><small>路線依北宜公路實際道路繪製</small><button class="small-primary" data-close>就這條</button></div>
+</dialog>
+<dialog id="settingsDialog" class="dialog settings-dialog" aria-labelledby="settingsTitle">
+  <div class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="settingsTitle">設定</h2></div><button class="icon-button" data-close aria-label="關閉設定"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <fieldset><legend>畫質</legend><div class="opts equal"><button data-opt="quality" data-val="low">低</button><button data-opt="quality" data-val="medium">中</button><button data-opt="quality" data-val="high">高</button><button data-opt="quality" data-val="ultra">極高</button></div></fieldset>
+  <fieldset><legend>音樂 <span id="nowPlaying" class="now-playing"></span></legend><div id="musicOpts" class="opts music-opts"></div><label class="volume-row" for="musicVol"><span>音樂音量</span><input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.5"><output id="musicVolValue" for="musicVol">50%</output></label><label class="volume-row" for="volume"><span>引擎音量</span><input id="volume" type="range" min="0" max="1.2" step="0.05" value="0.4"><output id="volumeValue" for="volume">33%</output></label></fieldset>
+  <fieldset><legend>駕駛</legend><div class="setting-row"><span>路上車流</span><div class="opts"><button data-opt="traffic" data-val="true">開</button><button data-opt="traffic" data-val="false">關</button></div></div><div class="setting-row"><span>ABS 輔助</span><div class="opts"><button data-opt="abs" data-val="true">開</button><button data-opt="abs" data-val="false">關</button></div></div></fieldset>
+  <div class="dialog-footer"><small>設定自動儲存</small><button class="small-primary" data-close>完成</button></div>
+</dialog>
+<dialog id="helpDialog" class="dialog help-dialog" aria-labelledby="helpTitle">
+  <div class="dialog-header"><h2 id="helpTitle">上路前</h2><button class="icon-button" data-close aria-label="關閉操作指南"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="keys"><kbd>↑</kbd><span>前進</span><kbd>↓</kbd><span>煞車 / 倒車</span><kbd>←</kbd><span>左轉</span><kbd>→</kbd><span>右轉</span><kbd>CTRL</kbd><span>氮氣加速</span><kbd>SHIFT</kbd><span>甩尾</span><kbd>R</kbd><span>重回賽道</span></div>
+  <details class="credits"><summary>資料與製作</summary><p>道路資料 © OpenStreetMap contributors（ODbL），經 OSRM 取得。高程：AWS Terrain Tiles（SRTM）。地圖底圖以高程繪製。</p><p>玩家車款為本作程序化模型。車流：Kenney Car Kit（CC0），透過 three.js 載入。本作與 Honda、Toyota、Nissan、Porsche 無關。</p><p id="carStatus">準備車流模型…</p></details>
+</dialog>
+<div id="loading2" class="overlay hidden"><div class="box"><span class="eyebrow">SEE YOU ON THE ROAD</span><h2>準備出發</h2><div class="bar"><div id="loadbar2"></div></div></div></div>
+<div id="pause" class="overlay hidden"><div class="box"><h2>稍作停留</h2><button class="btn" id="resumeBtn">繼續駕駛</button><button class="btn alt" id="restartBtn">重新開始</button><button class="btn alt" id="menuBtn">回到車庫</button></div></div>
+<div id="results" class="overlay hidden"><div class="box"><h2 id="resTitle">完成</h2><div id="resBody"></div><button class="btn" id="againBtn">再跑一次</button><button class="btn alt" id="resMenuBtn">回到車庫</button></div></div>
+<dialog id="boardDialog" class="dialog board-dialog" aria-labelledby="boardTitle">
+  <div class="dialog-header"><div><span class="eyebrow">HALL OF FAME</span><h2 id="boardTitle">紀錄與排行</h2></div><button class="icon-button" data-close aria-label="關閉"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="opts tabs" role="tablist"><button data-tab="rec" class="on">賽道前 15 名</button><button data-tab="top">積分排行榜</button></div>
+  <section id="boardRec">
+    <div id="boardTracks" class="opts board-tracks"></div>
+    <div class="opts board-dirs"><button data-bdir="1">往宜蘭</button><button data-bdir="-1">往台北</button></div>
+    <ol id="boardRecList" class="rank-list"></ol>
+    <p id="boardMine" class="note"></p>
+  </section>
+  <section id="boardTop" hidden>
+    <p class="note">每跑完一趟，依賽道長度、平均時速、碰撞次數、多人名次給分；積分一直累加，這裡就是平台排行榜。</p>
+    <ol id="boardTopList" class="rank-list"></ol>
+    <p id="boardTotal" class="note"></p>
+  </section>
+  <div class="dialog-footer"><small>個人計時賽與多人房間共用同一份紀錄</small><button class="small-primary" data-close>關閉</button></div>
+</dialog>
+<dialog id="roomsDialog" class="dialog rooms-dialog" aria-labelledby="roomsTitle">
+  <div class="dialog-header"><div><span class="eyebrow">MULTIPLAYER · 最多 4 人</span><h2 id="roomsTitle">多人連線</h2></div><button class="icon-button" data-close aria-label="關閉"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <p id="roomsGate" class="gate" hidden></p>
+  <div id="roomsBody">
+    <div id="roomsListBox">
+      <div class="rooms-head"><strong>房間列表</strong><button id="roomsRefresh" class="link-button">重新整理</button></div>
+      <div id="roomList" class="room-list" aria-live="polite"></div>
+    </div>
+    <div id="roomForm" class="room-form">
+      <strong id="roomFormTitle">開新房間</strong>
+      <label class="field"><span>房名</span><input id="roomName" type="text" maxlength="20" placeholder="例：猴王爭霸" autocomplete="off"></label>
+      <div class="field"><span>賽道</span><div id="roomTracks" class="opts"></div></div>
+      <div class="field"><span>方向</span><div id="roomDirs" class="opts"><button type="button" data-v="1">往宜蘭</button><button type="button" data-v="-1">往台北</button></div></div>
+      <div class="field"><span>天氣</span><div id="roomEnvs" class="opts"><button type="button" data-v="sunny">晴天</button><button type="button" data-v="fog">山霧</button><button type="button" data-v="dusk">黃昏</button><button type="button" data-v="night">夜晚</button><button type="button" data-v="rain">雨天</button></div></div>
+      <div class="field"><span>玩家碰撞</span><div id="roomCollide" class="opts"><button type="button" data-v="true">開啟</button><button type="button" data-v="false">關閉</button></div><small id="roomCollideNote"></small></div>
+      <button type="button" id="roomCreate" class="small-primary">建立房間</button>
+    </div>
+  </div>
+</dialog>
+<div id="mpHud" class="mp-hud hidden" aria-hidden="true"><div id="mpRank" class="mp-rank"><div class="mp-pos"><b id="mpPos">1</b><span id="mpOf">/ 4</span></div><ol id="mpOrder"></ol></div><div id="mpNote" class="mp-note"></div><div id="mpTags"></div></div>
+<div id="startCenter" class="start-center" aria-hidden="true"></div><div id="startNote" class="start-note" aria-hidden="true"></div>
+<div id="mpMenu" class="overlay hidden"><div class="box"><h2>比賽進行中</h2><p class="note">多人比賽無法暫停，其他玩家還在跑。</p><button class="btn" id="mpResume">繼續比賽</button><button class="btn alt" id="mpQuit">離開房間</button></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+<!-- 看重播 (js/game/replay.js)：上方是誰的紀錄，下方是播放控制列 -->
+<div id="replayUi" class="replay-ui hidden">
+  <div class="rv-top"><span class="rv-tag">REPLAY</span><b id="rvWho">—</b><small id="rvWhat"></small></div>
+  <div class="rv-bar" role="group" aria-label="重播控制">
+    <button id="rvPlay" class="rv-btn play" aria-label="暫停">❚❚</button>
+    <span id="rvTime" class="rv-time">00:00.00</span>
+    <input id="rvSeek" type="range" min="0" max="1000" step="1" value="0" aria-label="播放位置">
+    <span id="rvTotal" class="rv-time dim">00:00.00</span>
+    <div id="rvSpeed" class="rv-speed"><button data-rspeed="0.5">0.5×</button><button data-rspeed="1">1×</button><button data-rspeed="2">2×</button></div>
+    <button id="rvCam" class="rv-btn">視角</button>
+    <button id="rvExit" class="rv-btn">離開</button>
+  </div>
+  <div class="rv-keys">空白鍵 暫停 · ← → 倒退 / 快轉 5 秒 · C 換視角 · Esc 離開</div>
+  <div id="rvEnd" class="rv-end hidden"><span class="rv-tag">FINISH</span><b id="rvEndTime">00:00.00</b><div class="rv-end-btns"><button id="rvAgain" class="btn">再看一次</button><button id="rvBack" class="btn alt">返回紀錄</button></div></div>
+</div>
+<!-- 挑戰 (js/game/replay.js Ghost)：上方是挑戰的紀錄與領先 / 落後秒數，幽靈車頭上有名牌 -->
+<div id="ghostUi" class="replay-ui ghost-ui hidden" aria-hidden="true">
+  <div class="rv-top gh-top"><span class="rv-tag gh">挑戰</span><b id="ghWho">—</b><small id="ghWhat"></small><span id="ghGap" class="gh-gap"></span></div>
+  <div id="ghTag" class="mp-tag gh-tag" style="display:none"></div>
+</div>
+<script src="js/data/route_data.js"></script>
+<script src="js/data/terrain_data.js"></script>
+<script src="js/data/car_assets.js"></script>
+<script src="js/core/math.js"></script>
+<script src="js/core/gl.js"></script>
+<script src="js/render/shaders.js"></script>
+<script src="js/world/heightmap.js"></script>
+<script src="js/world/road.js"></script>
+<script src="js/world/drift_track.js"></script>
+<script src="js/world/drift_theme.js"></script>
+<script src="js/world/textures.js"></script>
+<script src="js/world/meshbuilder.js"></script>
+<script src="js/world/terrain.js"></script>
+<script src="js/world/trees.js"></script>
+<script src="js/world/scenery.js"></script>
+<script src="js/car/proc_car.js"></script>
+<script src="js/car/civic_model.js"></script>
+<script src="js/car/civic_textures.js"></script>
+<script src="js/car/gr86_model.js"></script>
+<script src="js/car/ae86_model.js"></script>
+<script src="js/car/r34_model.js"></script>
+<script src="js/car/r35_model.js"></script>
+<script src="js/car/p911_model.js"></script>
+<script src="js/car/vehicle.js"></script>
+<script src="js/car/model_loader.js"></script>
+<script src="js/game/audio.js"></script>
+<script src="js/game/music.js"></script>
+<script src="js/game/input.js"></script>
+<script src="js/game/traffic.js"></script>
+<script src="js/game/hud.js"></script>
+<script src="js/game/skidmarks.js"></script>
+<script src="js/game/start.js"></script>
+<script src="js/game/replay.js"></script>
+<script src="js/render/renderer.js"></script>
+<script src="js/ui/menu.js"></script>
+<script src="js/net/platform.js"></script>
+<script src="js/net/multiplayer.js"></script>
+<script src="js/ui/online.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
