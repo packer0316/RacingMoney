@@ -18,6 +18,7 @@
     p911: { scores: [4, 5, 4, 3], character: '後置後驅 · 出彎爆發' },
   };
   const METRICS = ['速度', '加速度', '飄移', '操控性'];
+  const CAR_LABELS = { k8: 'K8', gr86: 'GR86', ae86: 'AE86', r34: 'R34', r35: 'R35', p911: '911' };
   const WEATHER = { sunny: '晴天', fog: '山霧', dusk: '黃昏', night: '夜晚', rain: '雨天' };
   const KEY = 'rm_preferences';
   const PREFS_V = 2;   // 存檔格式版本 (見 restore)
@@ -46,6 +47,13 @@
       this.buildControls(); this.bind(); this.sync();
     }
     buildControls() {
+      for (const car of RM.CarModels.PLAYER_CARS) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.dataset.car = car.id; b.textContent = CAR_LABELS[car.id] || car.name;
+        b.setAttribute('aria-label', `選擇 ${car.name}`); b.title = car.name;
+        b.addEventListener('click', () => this.selectCar(car.id));
+        $('carPosition').append(b);
+      }
       this.statRows = METRICS.map((label, index) => {
         const row = document.createElement('div'); row.className = 'performance-stat';
         row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-score" aria-hidden="true"><b></b><small>/ 6</small></span><span class="stat-bars" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="6">${Array.from({ length: 6 }, (_, i) => `<i style="--light-delay:${index * 45 + i * 40}ms" aria-hidden="true"></i>`).join('')}</span>`;
@@ -56,6 +64,8 @@
         const b = document.createElement('button');
         b.className = 'sw'; b.dataset.opt = 'color'; b.dataset.val = i;
         b.title = color[0]; b.setAttribute('aria-label', color[0]); b.style.backgroundColor = color[1];
+        const rgb = color[1].slice(1).match(/../g).map(v => parseInt(v, 16));
+        b.style.setProperty('--check-color', rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722 > 145 ? '#122019' : '#ffffff');
         $('paintList').append(b);
       }
       for (const id of Object.keys(this.sections)) {
@@ -73,7 +83,7 @@
           b.append(tags);
         }
         const label = document.createElement('span'); label.className = 'map-card-label';
-        label.innerHTML = `<strong>${MAPS[id][0]}</strong><small>${this.distance(id)} km</small>`;
+        label.innerHTML = `<span><strong>${MAPS[id][0]}</strong><small class="map-card-location">${MAPS[id][1]}</small></span><b class="map-card-distance">${this.distance(id)} <small>km</small></b>`;
         b.append(label); $('mapList').append(b);
       }
       this.drawMaps();
@@ -87,14 +97,17 @@
       });
       const step = dir => {
         if (this.transition) return;
-        this.stepDirection = dir;
         const cars = RM.CarModels.PLAYER_CARS, i = cars.findIndex(c => c.id === this.game.opts.car);
-        document.querySelector(`#carList [data-val="${cars[(i + dir + cars.length) % cars.length].id}"]`).click();
+        this.selectCar(cars[(i + dir + cars.length) % cars.length].id, dir);
       };
       $('prevCar').addEventListener('click', () => step(-1)); $('nextCar').addEventListener('click', () => step(1));
+      $('resetCarView').addEventListener('click', () => {
+        if (this.transition) return;
+        this.angle = -.94; this.pitch = .23; this.pauseAutoRotate(); this.dirty = true;
+      });
       const stage = $('showroom');
       stage.addEventListener('pointerdown', e => {
-        if (e.button !== 0 || this.transition || this.pointer) return;
+        if (e.button !== 0 || this.transition || this.pointer || e.target.closest('button')) return;
         this.pauseAutoRotate();
         this.pointer = { id: e.pointerId, x: e.clientX, y: e.clientY }; stage.setPointerCapture(e.pointerId);
       });
@@ -114,6 +127,12 @@
       window.addEventListener('blur', () => { this.pointer = null; this.pauseAutoRotate(); });
     }
     pauseAutoRotate() { this.autoRotateAfter = performance.now() + AUTO_ROTATE_DELAY; this.autoRotateSpeed = 0; }
+    selectCar(id, direction) {
+      if (this.transition || id === this.game.opts.car) return;
+      const cars = RM.CarModels.PLAYER_CARS;
+      this.stepDirection = direction || Math.sign(cars.findIndex(c => c.id === id) - cars.findIndex(c => c.id === this.game.opts.car));
+      document.querySelector(`#carList [data-val="${id}"]`).click();
+    }
     update(dt, now) {
       if (!this.available || this.game.state !== 'menu' || document.hidden || this.pointer || this.transition || this.reducedMotion.matches || document.querySelector('dialog[open]') || now < this.autoRotateAfter) {
         this.autoRotateSpeed = 0;
@@ -136,7 +155,9 @@
       this.syncPerformance();
       const index = RM.CarModels.PLAYER_CARS.findIndex(car => car.id === o.car);
       $('carPosition').setAttribute('aria-label', `第 ${index + 1} 台，共 ${RM.CarModels.PLAYER_CARS.length} 台`);
-      [...$('carPosition').children].forEach((dot, i) => dot.classList.toggle('on', i === index));
+      [...$('carPosition').children].forEach((button, i) => { button.classList.toggle('on', i === index); button.setAttribute('aria-pressed', String(i === index)); });
+      $('carCount').textContent = `${index + 1} / ${RM.CarModels.PLAYER_CARS.length}`;
+      $('paintName').textContent = RM.CivicModel.COLORS[o.color][0];
       document.querySelectorAll('[data-opt]').forEach(b => { const on = String(o[b.dataset.opt]) === b.dataset.val; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
       $('selectedMapName').textContent = MAPS[o.section][0]; $('selectedMapLocation').textContent = MAPS[o.section][1];
       $('selectedMapDistance').innerHTML = this.distance(o.section) + ' <small>km</small>';
@@ -217,6 +238,7 @@
       canvas.style.opacity = '0';
       document.querySelector('.car-heading').style.opacity = '0';
       $('prevCar').disabled = $('nextCar').disabled = true;
+      $('carPosition').setAttribute('aria-busy', 'true');
       $('showroom').setAttribute('aria-busy', 'true');
       this.pointer = null;
       return true;
@@ -270,6 +292,7 @@
       $('menu').classList.remove('is-switching-car');
       $('carPerformance').classList.remove('is-charging');
       $('prevCar').disabled = $('nextCar').disabled = false;
+      $('carPosition').removeAttribute('aria-busy');
       $('showroom').removeAttribute('aria-busy');
       this.dirty = true;
     }
@@ -352,7 +375,7 @@
       if (!this.preview || this.preview.carModel.id !== g.opts.car) this.prepareCar();
       this.preview.paint = RM.srgb(RM.CivicModel.COLORS[g.opts.color][1]);
       const rect = $('showroom').getBoundingClientRect(), aspect = Math.max(.25, rect.width / Math.max(1, rect.height)), distance = Math.max(6.7, 10 / aspect);
-      const cam = { eye: [Math.sin(this.angle) * distance * Math.cos(this.pitch), .7 + Math.sin(this.pitch) * distance, -Math.cos(this.angle) * distance * Math.cos(this.pitch)], target: [0, .62, 0], up: [0, 1, 0], fov: rect.width < 641 && rect.height < 180 ? 25 : 32 };
+      const cam = { eye: [Math.sin(this.angle) * distance * Math.cos(this.pitch), .7 + Math.sin(this.pitch) * distance, -Math.cos(this.angle) * distance * Math.cos(this.pitch)], target: [0, .62, 0], up: [0, 1, 0], fov: rect.width < 641 && rect.height < 180 ? 25 : 29 };
       const f = { terrain: [], road: [], props: [], decals: [], inst: [], dynamic: [], glass: [], shadowProps: [], shadowInst: [], shadowDynamic: [], background: [0, 0, 0], studio: true, studioGround: this.studioGround };
       g._carDraw.call(this.preview, f.dynamic, f.glass, f.shadowDynamic); f.car = this.preview._carShell;
       f.car.dirt = 0; f.dynamic.forEach(d => { d.dirt = 0; });

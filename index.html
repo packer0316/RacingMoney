@@ -7,6 +7,7 @@
 <title>山道猴王：操作同跑跑卡D車</title>
 <link rel="stylesheet" href="css/menu.css">
 <link rel="stylesheet" href="css/online.css">
+<link rel="stylesheet" href="css/garage.css">
 </head>
 <!-- data-gs-fit-ignore：金碟平台會在遊戲頁注入 fit.js，量畫面上元素的範圍 (含 transform、小數像素) 來放大遊戲 iframe。
      這個遊戲永遠剛好填滿視窗，不需要平台放大；不關掉的話，換車滑動時 iframe 會被越撐越寬，比賽中也會每次 +1 px 越來越高 (畫面被拉長) -->
@@ -30,7 +31,7 @@
 <canvas id="gl" aria-hidden="true"></canvas><canvas id="hud" aria-hidden="true"></canvas><div id="flash"></div>
 <main id="menu" class="menu">
   <header class="menu-header">
-    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><b>山道<span>猴王</span></b><small>操作同跑跑卡D車 · 北宜公路</small></div></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><b>山道<span>猴王</span></b><small>北宜公路 · 山道競速</small></div></div>
     <div id="musicPlayer" class="music-player" role="group" aria-label="背景音樂播放器">
       <button id="prevTrack" class="music-step" data-music-step="-1" aria-label="上一首" title="上一首"><svg class="icon" aria-hidden="true"><use href="#i-track-prev"/></svg></button>
       <div id="musicTrack" class="music-track" role="status" aria-live="polite" aria-atomic="true"><div class="music-marquee"><span id="musicTitle">Midnight Run · Evan Vale</span><span id="musicTitleCopy" aria-hidden="true">Midnight Run · Evan Vale</span></div></div>
@@ -39,20 +40,20 @@
     <button id="profileBtn" class="profile-chip" aria-label="我的積分與排行榜" title="紀錄與排行榜"><svg class="icon"><use href="#i-trophy"/></svg><span id="profileName">—</span><b id="profileScore"></b></button>
     <button id="settingsBtn" class="icon-button settings-button" data-open="settingsDialog" aria-label="開啟設定" title="設定"><svg class="icon"><use href="#i-gear"/></svg><span>設定</span></button>
   </header>
-  <section class="car-heading" aria-live="polite"><div id="carMake" class="eyebrow">HONDA</div><h1 id="carName">CIVIC <em>K8</em></h1><p id="carSpecs">1.6 L <span>125 PS</span> FF</p></section>
+  <section class="car-heading" aria-live="polite"><div class="car-identity"><span class="garage-kicker">你的車庫</span><span id="carMake" class="eyebrow">HONDA</span></div><h1 id="carName">CIVIC <em>K8</em></h1><p id="carSpecs">1.6 L <span>125 PS</span> FF</p><p id="carCharacter" class="car-character"></p></section>
   <section id="carPerformance" class="car-performance" aria-labelledby="performanceTitle">
-    <div class="performance-header"><h2 id="performanceTitle">車輛性能</h2><span>PERFORMANCE</span></div>
+    <div class="performance-header"><div><span class="panel-eyebrow">PERFORMANCE</span><h2 id="performanceTitle">車輛性能</h2></div><span class="performance-limit">MAX <b>6</b></span></div>
     <div id="performanceStats" class="performance-stats"></div>
-    <p id="carCharacter" class="car-character"></p>
+    <p class="performance-note">依遊戲內表現評級</p>
   </section>
-  <div id="showroom" class="showroom" tabindex="0" role="group" aria-label="3D 車輛預覽，可拖曳旋轉或使用左右方向鍵"><span id="previewStatus" class="preview-status" role="status">正在準備車庫…</span></div>
+  <div id="showroom" class="showroom" tabindex="0" role="group" aria-label="3D 車輛預覽，可拖曳旋轉或使用左右方向鍵"><span id="previewStatus" class="preview-status" role="status">正在準備車庫…</span><div class="showroom-tools"><div class="rotate-hint"><svg class="icon"><use href="#i-rotate"/></svg><span>自動展示 · 拖曳旋轉</span></div><button id="resetCarView" class="view-reset" aria-label="重設車輛視角" title="回到初始視角">重設視角</button></div></div>
   <button id="prevCar" class="icon-button car-step previous" aria-label="上一台車"><svg class="icon"><use href="#i-left"/></svg></button>
   <button id="nextCar" class="icon-button car-step next" aria-label="下一台車"><svg class="icon"><use href="#i-right"/></svg></button>
-  <section class="car-controls" aria-label="選擇車色"><div class="rotate-hint"><svg class="icon"><use href="#i-rotate"/></svg><span>拖曳旋轉</span></div><div id="carList" hidden></div><div id="carPosition" class="car-position" aria-label="目前車款"><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="paintList" class="paint-list" aria-label="車色"></div></section>
+  <section class="car-controls" aria-label="選擇車款與車色"><div class="control-heading"><span>選擇車款</span><span id="carCount">1 / 6</span></div><div id="carList" hidden></div><div id="carPosition" class="car-position" role="group" aria-label="選擇車款"></div><div class="paint-heading"><span>車身塗裝</span><span id="paintName" aria-live="polite">銀色</span></div><div id="paintList" class="paint-list" aria-label="車色"></div></section>
   <div class="menu-bottom">
     <div class="map-block"><button id="recordsBtn" class="record-holder" aria-label="這張地圖的紀錄保持人，按一下看前 15 名" title="看前 15 名"><svg class="icon"><use href="#i-trophy"/></svg><span class="rh-label">紀錄保持人</span><b id="recordName">—</b><span id="recordTime" class="rh-time"></span></button>
     <button id="mapBtn" class="map-preview" data-open="mapDialog" aria-label="選擇地圖"><canvas id="selectedMap" width="640" height="300" aria-hidden="true"></canvas><span class="map-top"><span><svg class="icon"><use href="#i-map"/></svg>選擇地圖</span><span class="map-badge">台 9 線</span></span><span class="map-caption"><span><strong id="selectedMapName">彎道衝刺</strong><small id="selectedMapLocation">石碇 · 坪林</small></span><span id="selectedMapDistance" class="map-distance">2.1 <small>km</small></span></span></button></div>
-    <div class="launch-block"><button id="conditionsBtn" class="conditions" data-open="mapDialog" aria-label="調整天氣與行駛方向"><svg class="icon"><use href="#i-sun"/></svg><span id="conditionText">晴天 · 往宜蘭</span></button><button id="mpBtn" class="mp-button" disabled><svg class="icon"><use href="#i-users"/></svg><span>多人連線</span></button><button id="startBtn" disabled><svg class="icon"><use href="#i-play"/></svg><span id="startLabel">準備中</span></button><div id="loadStatus" class="load" role="status"><div class="bar"><div id="loadbar"></div></div><div id="loadtext">準備中…</div></div></div>
+    <div class="launch-block"><button id="conditionsBtn" class="conditions" data-open="mapDialog" aria-label="調整天氣與行駛方向"><svg class="icon"><use href="#i-sun"/></svg><span id="conditionText">晴天 · 往宜蘭</span></button><button id="mpBtn" class="mp-button" disabled><svg class="icon"><use href="#i-users"/></svg><span>多人連線<small>一起上山，最多 4 人</small></span></button><button id="startBtn" disabled><span class="launch-copy"><small>TIME ATTACK</small><span id="startLabel">準備中</span></span><svg class="icon"><use href="#i-play"/></svg></button><div id="loadStatus" class="load" role="status"><div class="bar"><div id="loadbar"></div></div><div id="loadtext">準備中…</div></div></div>
   </div>
   <footer class="menu-footer"><button class="help-button" data-open="helpDialog"><svg class="icon"><use href="#i-help"/></svg>操作指南</button><span>北宜，下一個彎見。</span><span class="footer-route">24° N &nbsp; 121° E</span></footer>
   <aside id="roomPanel" class="room-panel hidden" aria-label="多人房間">
@@ -64,15 +65,19 @@
 </main>
 <dialog id="mapDialog" class="dialog map-dialog" aria-labelledby="mapTitle">
   <div class="dialog-header"><div><span class="eyebrow">EXPLORE ROUTE 9</span><h2 id="mapTitle">選一段，出發。</h2></div><button class="icon-button" data-close aria-label="關閉地圖"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="dialog-scroll">
   <div id="mapList" class="map-list" aria-label="地圖路段"></div>
   <div class="route-options"><fieldset><legend>行駛方向</legend><div class="opts"><button data-opt="dir" data-val="1">往宜蘭</button><button data-opt="dir" data-val="-1">往台北</button></div></fieldset><fieldset><legend>天氣與時段</legend><div class="opts weather"><button data-opt="env" data-val="sunny">晴天</button><button data-opt="env" data-val="fog">山霧</button><button data-opt="env" data-val="dusk">黃昏</button><button data-opt="env" data-val="night">夜晚</button><button data-opt="env" data-val="rain">雨天</button></div></fieldset></div>
+  </div>
   <div class="dialog-footer"><small>路線依北宜公路實際道路繪製</small><button class="small-primary" data-close>就這條</button></div>
 </dialog>
 <dialog id="settingsDialog" class="dialog settings-dialog" aria-labelledby="settingsTitle">
   <div class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="settingsTitle">設定</h2></div><button class="icon-button" data-close aria-label="關閉設定"><svg class="icon"><use href="#i-close"/></svg></button></div>
+  <div class="dialog-scroll">
   <fieldset><legend>畫質</legend><div class="opts equal"><button data-opt="quality" data-val="low">低</button><button data-opt="quality" data-val="medium">中</button><button data-opt="quality" data-val="high">高</button><button data-opt="quality" data-val="ultra">極高</button></div></fieldset>
   <fieldset><legend>音樂 <span id="nowPlaying" class="now-playing"></span></legend><div id="musicOpts" class="opts music-opts"></div><label class="volume-row" for="musicVol"><span>音樂音量</span><input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.5"><output id="musicVolValue" for="musicVol">50%</output></label><label class="volume-row" for="volume"><span>引擎音量</span><input id="volume" type="range" min="0" max="1.2" step="0.05" value="0.4"><output id="volumeValue" for="volume">33%</output></label></fieldset>
   <fieldset><legend>駕駛</legend><div class="setting-row"><span>路上車流</span><div class="opts"><button data-opt="traffic" data-val="true">開</button><button data-opt="traffic" data-val="false">關</button></div></div><div class="setting-row"><span>ABS 輔助</span><div class="opts"><button data-opt="abs" data-val="true">開</button><button data-opt="abs" data-val="false">關</button></div></div></fieldset>
+  </div>
   <div class="dialog-footer"><small>設定自動儲存</small><button class="small-primary" data-close>完成</button></div>
 </dialog>
 <dialog id="helpDialog" class="dialog help-dialog" aria-labelledby="helpTitle">

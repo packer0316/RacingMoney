@@ -1,0 +1,357 @@
+/* Garage art direction. Kept separate from the race HUD and platform / replay controls. */
+:root {
+  --edge: clamp(24px, 3.8vw, 64px);
+  --rail: clamp(238px, 21vw, 310px);
+  --dock-bottom: 56px;
+  --surface: linear-gradient(135deg, #152226ed, #0c151be8);
+  --hairline: #c7dfd41f;
+  --dim: #a1afad;
+}
+button { transition: background .18s, color .18s, border-color .18s, box-shadow .18s, transform .18s; }
+button:focus-visible, summary:focus-visible, input:focus-visible, .showroom:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; }
+button:disabled { cursor: not-allowed; }
+#menu { background: radial-gradient(ellipse at 45% 48%, #20313838, transparent 60%), linear-gradient(180deg, #0a1118, #101b20 50%, #091015); }
+.has-route-backdrop #menu { background: linear-gradient(90deg, #07101299, transparent 38%, transparent 68%, #07101299), linear-gradient(180deg, #071012cf, transparent 29%, transparent 57%, #080e14ef 100%); }
+.route-backdrop { filter: brightness(.68) saturate(.48) contrast(.9); }
+#menu .menu-header { top: 25px; left: var(--edge); right: var(--edge); height: 50px; gap: 10px; }
+#menu .menu-header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -19px; height: 1px; background: linear-gradient(90deg, #d8f98a38, #ffffff12 35%, #ffffff08); }
+#menu .brand { gap: 14px; flex-shrink: 0; }
+#menu .brand b { font-size: 23px; letter-spacing: 2px; }
+#menu .brand small { font-size: 12px; margin-top: 5px; letter-spacing: 2px; color: #98aaa8; }
+#menu .brand-mark { height: 31px; }
+#menu .music-player { flex-basis: 248px; height: 40px; margin-right: 6px; border-color: var(--hairline); border-radius: 6px; background: #0b141ba6; }
+#menu .music-track { font-size: 13px; letter-spacing: 1px; }
+#menu .music-step { height: 36px; flex-basis: 36px; }
+#menu .music-step:hover { background: #d8f98a14; }
+#menu .profile-chip, #menu .settings-button { height: 44px; margin-right: 0; padding: 0 15px; border-radius: 6px; border-color: var(--hairline); background: #0b141b8c; }
+#menu .profile-chip { max-width: 240px; }
+#menu .settings-button { gap: 8px; font-size: 14px; }
+#menu .profile-chip:hover, #menu .settings-button:hover { background: #d8f98a0d; border-color: #d8f98a55; }
+
+/* The identity, vehicle, and performance column share a clear visual hierarchy. */
+#menu .car-heading { top: clamp(110px, 14vh, 148px); left: var(--edge); right: var(--edge); width: auto; text-align: center; }
+.car-identity { display: flex; align-items: center; justify-content: center; gap: 17px; }
+.garage-kicker { font-size: 13px; color: #aebdb8; letter-spacing: 3px; padding-right: 17px; border-right: 1px solid #d8f98a45; }
+#menu .car-heading .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 4px; }
+#menu .car-heading h1 { font-size: clamp(43px, 5vw, 78px); line-height: 1.03; font-weight: 650; letter-spacing: -.045em; margin: 13px 0 17px; }
+#menu .car-heading h1 em { color: #c0cbc7; font-weight: 300; }
+#menu .car-heading #carSpecs { font-size: 13px; letter-spacing: 2px; color: #a9b9b5; }
+#menu .car-heading #carSpecs span { padding: 0 17px; margin: 0 13px; }
+#menu .car-heading .car-character { display: block; border: 0; padding: 0; margin: 14px 0 0; font-size: 13px; letter-spacing: 2px; color: #d0d7cf; }
+#menu .showroom { left: max(var(--edge), calc(50% - 430px)); right: max(var(--edge), calc(50% - 430px)); top: 28%; bottom: 256px; }
+.showroom-tools { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; white-space: nowrap; pointer-events: none; }
+#menu .rotate-hint { display: flex; font-size: 12px; letter-spacing: 1px; color: #b8c7c0; }
+.view-reset { pointer-events: auto; border: 0; border-left: 1px solid #ffffff25; padding: 3px 0 3px 14px; background: none; font-size: 12px; color: #a2b5ab; }
+.view-reset:hover { color: var(--acc); }
+#menu .car-step { top: 48%; width: 48px; height: 56px; border-radius: 6px; border-color: #d8f98a36; background: #0d181db8; box-shadow: 0 7px 25px #0002; }
+#menu .car-step .icon { width: 24px; height: 24px; }
+#menu .car-step.previous { left: calc(var(--edge) + var(--rail) + 16px); }
+#menu .car-step.next { right: calc(var(--edge) + var(--rail) + 16px); }
+#menu .car-step:hover:not(:disabled) { color: var(--acc); border-color: #d8f98a9c; background: #1c2b26; box-shadow: 0 0 26px #d8f98a0d; }
+#menu .car-performance { top: clamp(216px, 27vh, 320px); right: var(--edge); width: var(--rail); padding: 20px; border: 1px solid var(--hairline); border-radius: 9px; background: var(--surface); box-shadow: 0 16px 44px #0003, inset 0 1px #ffffff06; }
+#menu .car-performance::before { content: ''; position: absolute; top: -1px; left: 23px; width: 38px; height: 2px; background: var(--acc); box-shadow: 0 0 12px #d8f98a44; }
+#menu .performance-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--hairline); }
+.panel-eyebrow { display: block; margin-bottom: 6px; font-size: 11px; letter-spacing: 2px; color: #8fa5a0; }
+#menu .performance-header h2 { font-size: 19px; letter-spacing: 2px; }
+#menu .performance-header .performance-limit { display: flex; align-items: baseline; gap: 5px; color: #8c9e97; font-size: 10px; letter-spacing: 1px; }
+.performance-limit b { font-size: 27px; color: var(--acc); font-weight: 400; }
+#menu .performance-stats { gap: 11px; }
+#menu .performance-stat { gap: 6px; }
+#menu .stat-label { font-size: 14px; letter-spacing: 2px; }
+#menu .stat-score b { font-size: 17px; }
+#menu .stat-score small { font-size: 11px; }
+#menu .stat-bars { gap: 5px; }
+#menu .stat-bars i { height: 8px; border-radius: 1px; background: #a4b8aa0d; border-color: #a4b8aa1c; }
+#menu .stat-bars i.is-lit { background: linear-gradient(180deg, #e1ffa2, #b6dc72); border-color: #d8f98a6e; box-shadow: 0 0 9px #b9ed7424; }
+#menu .is-charging .stat-bars i { background: #a4b8aa0d; box-shadow: none; border-color: #a4b8aa1c; }
+.performance-note { font-size: 12px; color: #8ea29b; letter-spacing: 1px; margin: 14px 0 0; }
+
+/* Bottom dock: route, direct vehicle selection / paint, and the primary race action. */
+#menu .menu-bottom { left: var(--edge); right: var(--edge); bottom: var(--dock-bottom); }
+#menu .map-block { width: 300px; gap: 8px; }
+#menu .record-holder { min-height: 38px; padding: 7px 12px; border-color: #d8f98a2b; border-radius: 6px; background: #101b20d9; gap: 8px; }
+#menu .record-holder .rh-label { font-size: 12px; letter-spacing: 0; }
+#menu .record-holder b { font-size: 14px; }
+#menu .record-holder.none b { font-size: 12px; }
+#menu .record-holder .rh-time { font-size: 16px; }
+#menu .map-preview { width: 100%; height: 140px; border-radius: 9px; border-color: #c7dfd433; background: #132023; }
+#menu .map-preview:hover { border-color: #d8f98a9c; box-shadow: 0 8px 35px #0003; }
+#menu .map-preview canvas { opacity: .85; }
+#menu .map-top { top: 13px; font-size: 13px; }
+#menu .map-top, #menu .map-caption { left: 17px; right: 17px; }
+#menu .map-caption { bottom: 15px; }
+#menu .map-caption strong { font-size: 21px; font-weight: 500; }
+#menu .map-caption small { font-size: 12px; letter-spacing: 1px; }
+#menu .map-distance { font-size: 28px; }
+#menu .map-distance small { font-size: 12px; }
+#menu .car-controls { left: 50%; bottom: var(--dock-bottom); width: 360px; padding: 15px 18px; gap: 10px; align-items: stretch; border: 1px solid var(--hairline); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 40px #0003; }
+.control-heading, .paint-heading { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #a5b6ae; letter-spacing: 1px; }
+#carCount { color: #d3ddce; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
+#paintName { color: #e1e9dc; }
+#menu .car-position { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.car-position button { min-width: 0; padding: 8px 2px; border: 1px solid #ffffff0c; border-radius: 4px; background: #ffffff03; color: #9aada6; font-size: 12px; letter-spacing: .2px; }
+.car-position button:hover { color: #e7efdf; border-color: #d8f98a55; background: #ffffff06; }
+.car-position button.on { color: #172014; background: var(--acc); border-color: var(--acc); font-weight: 600; }
+.car-position[aria-busy=true] button { cursor: progress; }
+#menu .paint-list { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 2px; justify-items: center; }
+#menu .sw { position: relative; width: 27px; height: 27px; border: 2px solid #0d171b; outline: 1px solid #cadcd229; box-shadow: inset 0 1px 3px #ffffff30; }
+#menu .sw:hover { outline-color: #e4f1d4aa; transform: translateY(-2px); }
+#menu .sw.on { outline: 2px solid var(--acc); outline-offset: 2px; }
+#menu .sw.on::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: 700; color: var(--check-color); }
+#menu .launch-block { width: var(--rail); }
+#menu .conditions { justify-content: flex-start; padding: 8px 1px 12px; font-size: 13px; color: #b4c2bb; }
+#menu .mp-button { height: 57px; margin-bottom: 8px; padding: 0 19px; justify-content: flex-start; border-radius: 7px; border-color: #c7dfd436; background: #101c20cc; color: #d4dfd3; font-size: 16px; letter-spacing: 2px; gap: 12px; text-align: left; }
+#menu .mp-button small { display: block; font-size: 11px; font-weight: 400; letter-spacing: 1px; margin-top: 4px; color: #91a69c; }
+#menu .mp-button:hover:not(:disabled) { background: #1a2c25; border-color: #d8f98a72; }
+#menu #startBtn { height: 87px; padding: 0 23px; justify-content: space-between; border-radius: 7px; border-color: #dfffa1; background: linear-gradient(105deg, #dcfa97, #c4ec7a); color: #1b2918; font-size: 24px; letter-spacing: 3px; box-shadow: 0 8px 28px #0003, inset 0 1px #f4ffcd; }
+.launch-copy { display: flex; flex-direction: column; gap: 7px; text-align: left; }
+.launch-copy small { font-size: 11px; font-weight: 500; letter-spacing: 2.8px; color: #40582c; }
+#menu #startBtn .icon { display: block; width: 20px; height: 20px; }
+#menu #startBtn:hover:not(:disabled) { background: #e6ffac; box-shadow: 0 8px 32px #b4ec6024; transform: translateY(-2px); }
+#menu .load { bottom: -27px; }
+#menu .menu-footer { left: var(--edge); right: var(--edge); bottom: 17px; font-size: 11px; color: #81958f; letter-spacing: 2px; }
+#menu .help-button { font-size: 12px; }
+
+/* Dialogs and race overlays follow the same typography and surface treatment. */
+.dialog, .box, .room-panel { background: linear-gradient(135deg, #18262bf8, #0d171dfc); border: 1px solid #d2e4d92b; box-shadow: 0 24px 100px #0009, inset 0 1px #ffffff06; border-radius: 12px; }
+.dialog { padding: 30px; scrollbar-width: thin; scrollbar-color: #577063 #0d171d; }
+.dialog::backdrop { background: #040a10b8; backdrop-filter: blur(8px); }
+.map-dialog[open], .settings-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+.dialog-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 3px 5px 5px 2px; margin: 0 -5px 0 -2px; scrollbar-width: thin; scrollbar-color: #577063 #0d171d; }
+.dialog > .dialog-header, .dialog > .dialog-footer { flex-shrink: 0; }
+.dialog-header { margin-bottom: 24px; }
+.dialog-header h2 { font-size: 30px; line-height: 1.25; letter-spacing: 1px; }
+.dialog-header .eyebrow { color: #a7c584; letter-spacing: 2.5px; font-size: 11px; }
+.dialog-header .icon-button { border-radius: 6px; width: 40px; height: 40px; background: #ffffff04; }
+.dialog-footer { padding-top: 20px; gap: 18px; border-color: #c7dfd424; }
+.dialog-footer small { line-height: 1.6; }
+.small-primary { padding: 12px 24px; min-height: 42px; font-weight: 600; white-space: nowrap; }
+.small-primary:hover { background: #e5ffa7; }
+.map-dialog { width: 930px; }
+.map-list { gap: 14px; }
+.map-card { border-radius: 8px; border-color: #d3e1d520; background: #111e23; transition: border-color .18s, background .18s, transform .18s, box-shadow .18s; }
+.map-card:hover { transform: translateY(-3px); border-color: #c7f18d99; box-shadow: 0 8px 22px #0003; }
+.map-card canvas { height: 140px; opacity: .8; transition: opacity .18s; }
+.map-card:hover canvas, .map-card.on canvas { opacity: 1; }
+.map-card .map-card-label { padding: 15px; background: #0e191edb; align-items: flex-end; }
+.map-card strong { display: block; font-size: 17px; letter-spacing: .5px; }
+.map-card .map-card-location { display: block; margin-top: 6px; color: #91a69d; font-size: 12px; }
+.map-card-distance { font-size: 22px; color: #d6e8c5; font-weight: 500; white-space: nowrap; }
+.map-card-distance small { font-size: 11px; color: #8fa49b; }
+.map-card.on { border-color: var(--acc); box-shadow: 0 0 0 1px #d8f98a33; }
+.map-card.on .map-card-label { background: #1b2a22; }
+.map-tag { font-size: 11px; padding: 5px 7px; }
+.route-options { gap: 36px; padding-top: 22px; border-top: 1px solid #ffffff12; }
+.settings-dialog { width: 470px; margin: 24px 24px auto auto; }
+.settings-dialog fieldset { border-bottom: 1px solid #c7dfd41c; padding-bottom: 22px; margin-bottom: 22px; }
+.settings-dialog fieldset:last-of-type { border: 0; padding-bottom: 0; }
+.settings-dialog legend { font-size: 16px; color: #e0e8dc; letter-spacing: 1px; margin-bottom: 14px; }
+.settings-dialog .now-playing { display: block; margin: 8px 0 0; font-size: 12px; letter-spacing: .5px; font-weight: 400; }
+.opts { gap: 7px; }
+.opts button { min-height: 40px; padding: 10px 14px; border-radius: 5px; font-size: 14px; background: #ffffff03; border-color: #d5e4d31c; color: #b8c8bf; }
+.opts button:hover { border-color: #d8f98a66; background: #ffffff07; }
+.opts button.on { border-color: #d8f98a91; background: #d8f98a12; color: #dffca9; }
+.music-opts { grid-template-columns: 1fr; }
+.music-opts button { text-align: left; font-size: 14px; }
+.volume-row { font-size: 14px; margin-top: 20px; }
+.volume-row output { font-size: 13px; color: #d1e1c4; }
+.volume-row input { height: 25px; }
+.setting-row { margin-top: 15px; }
+.help-dialog { width: 470px; }
+.keys { font-size: 15px; gap: 13px 22px; }
+kbd { min-width: 45px; font-size: 13px; background: #ffffff07; border-color: #d6e6d52b; box-shadow: 0 2px #0006; }
+.credits { font-size: 13px; line-height: 1.8; }
+.box { padding: 32px; }
+.box h2 { font-size: 30px; letter-spacing: 1px; }
+.box .big { font-size: 48px; }
+.btn { min-height: 46px; border-radius: 6px; }
+.btn:hover { background: #e2ffa2; }
+.btn.alt:hover { background: #ffffff10; }
+.rank-list { gap: 8px; }
+.rank-list li { padding: 12px; background: #ffffff03; border-color: #ffffff08; }
+.rank-list li.me { border-color: #d8f98a80; }
+.room-form { background: #ffffff03; border-color: #d3e4d51f; border-radius: 8px; }
+.room-row { background: #ffffff03; border-color: #d3e4d51c; }
+.room-panel { scrollbar-width: thin; scrollbar-color: #577063 #0d171d; }
+#menu .room-panel { right: var(--edge); top: 128px; bottom: var(--dock-bottom); width: var(--rail); max-height: none; padding: 20px; }
+#menu.in-room .car-performance { left: var(--edge); right: auto; top: 322px; width: 235px; padding: 18px; }
+#menu.in-room .performance-header { margin-bottom: 14px; padding-bottom: 12px; }
+#menu.in-room .performance-stats { gap: 11px; }
+#menu.in-room .performance-note { display: none; }
+#menu.in-room .car-controls { left: 50%; }
+
+@media (max-width: 1120px) {
+ :root { --edge: 26px; --rail: 224px; }
+ #menu .brand b { font-size: 20px; } #menu .brand small { font-size: 11px; }
+ #menu .music-player { flex-basis: 210px; }
+ #menu .car-heading h1 { font-size: 58px; }
+ #menu .car-performance { padding: 18px; } #menu .performance-stats { gap: 10px; }
+ #menu .performance-note { display: none; }
+ #menu .performance-header h2 { font-size: 17px; } #menu .performance-header { margin-bottom: 18px; }
+ #menu .map-block { width: 250px; }
+ #menu .car-controls { width: 318px; padding: 15px; }
+ #menu .car-step { width: 42px; height: 50px; }
+ #menu #startBtn { padding: 0 18px; font-size: 21px; letter-spacing: 2px; }
+ #menu .mp-button { padding: 0 15px; }
+}
+@media (max-width: 900px) and (min-width: 761px) {
+ :root { --edge: 22px; --rail: 200px; }
+ #menu .brand small { display: none; } #menu .music-player { flex-basis: 180px; }
+ #menu .car-heading h1 { font-size: 48px; } #menu .car-character { font-size: 12px; }
+ #menu .car-performance { padding: 16px; } #menu .panel-eyebrow { font-size: 10px; }
+ #menu .performance-limit { display: none; }
+ #menu .map-block { width: 218px; }
+ #menu .car-controls { width: 285px; padding: 15px 12px; }
+ #menu .paint-list { gap: 8px 5px; } #menu .sw { width: 25px; height: 25px; }
+ #menu .record-holder .rh-label { display: none; }
+ #menu .map-caption strong { font-size: 18px; }
+}
+@media (max-height: 740px) and (min-width: 761px) {
+ #menu .menu-header { top: 19px; height: 44px; } #menu .menu-header::after { bottom: -14px; }
+ #menu .car-heading { top: 107px; } #menu .car-heading h1 { font-size: clamp(43px, 5vw, 67px); margin: 10px 0 13px; }
+ #menu .car-heading .car-character { margin-top: 10px; font-size: 12px; }
+ #menu .car-performance { top: 190px; padding: 16px; }
+ #menu .performance-header { padding-bottom: 8px; margin-bottom: 12px; }
+ #menu .performance-header .panel-eyebrow, #menu .performance-note { display: none; }
+ #menu .performance-stats { gap: 8px; } #menu .stat-label { font-size: 13px; }
+ #menu .showroom { top: 27%; bottom: 250px; }
+ #menu .car-step { top: 43%; }
+ #menu.in-room .car-performance { top: 275px; }
+}
+
+/* Portrait: a compact control dock with a swipeable paint rail, no overlap. */
+@media (max-width: 760px) and (min-height: 481px) {
+ :root { --edge: 18px; --rail: 128px; --dock-bottom: 42px; }
+ #menu .menu-header { top: 18px; height: 42px; gap: 7px; }
+ #menu .menu-header::after { display: none; }
+ #menu .brand { gap: 10px; } #menu .brand b { font-size: 17px; letter-spacing: 1px; }
+ #menu .brand small { font-size: 10px; letter-spacing: 1px; } #menu .brand-mark { height: 25px; }
+ #menu .profile-chip { margin-left: auto; padding: 0 10px; gap: 6px; height: 40px; max-width: 32vw; font-size: 12px; }
+ #menu .profile-chip span { display: none; }
+ #menu .settings-button { width: 40px; height: 40px; padding: 0; flex-shrink: 0; } #menu .settings-button span { display: none; }
+ #menu .music-player { position: absolute; right: 0; top: 50px; width: 190px; height: 30px; margin: 0; }
+ #menu .music-step { height: 28px; flex-basis: 28px; } #menu .music-track { font-size: 11px; }
+ #menu .car-heading { top: 114px; left: var(--edge); width: calc(100% - var(--edge) * 2); text-align: center; }
+ .car-identity { justify-content: center; gap: 12px; } .garage-kicker { font-size: 11px; padding-right: 12px; letter-spacing: 1px; }
+ #menu .car-heading .eyebrow { font-size: 10px; letter-spacing: 3px; }
+ #menu .car-heading h1 { font-size: clamp(27px, 7.5vw, 44px); margin: 10px 0; }
+ #menu .car-heading #carSpecs { display: block; font-size: 10px; letter-spacing: 1px; }
+ #menu .car-heading #carSpecs span { margin: 0 10px; padding: 0 10px; }
+ #menu .car-heading .car-character { display: none; }
+ #menu .showroom { top: 193px; bottom: 354px; left: 0; right: 0; }
+ .showroom-tools { display: none; }
+ #menu .car-step { top: calc(50% - 94px); width: 38px; height: 42px; }
+ #menu .car-step.previous { left: 14px; } #menu .car-step.next { right: 14px; }
+ #menu .car-controls { left: 18px; right: 18px; bottom: 230px; width: auto; transform: none; padding: 9px 12px 6px; gap: 7px; border-radius: 8px; }
+ .control-heading { display: none; }
+ #menu .car-position button { padding: 7px 2px; font-size: 11px; }
+ .paint-heading { font-size: 11px; }
+ #menu .paint-list { display: flex; justify-content: flex-start; gap: 10px; overflow-x: auto; padding: 3px 4px 9px; scrollbar-width: thin; scrollbar-color: #71865755 transparent; touch-action: pan-x; }
+ #menu .sw { flex: 0 0 29px; width: 29px; height: 29px; }
+ #menu .car-performance { top: auto; bottom: 163px; left: 18px; right: 18px; width: auto; padding: 10px 14px; border-radius: 8px; }
+ #menu .car-performance::before, #menu .performance-header, #menu .performance-note { display: none; }
+ #menu .performance-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+ #menu .performance-stat { grid-template-columns: 1fr auto; gap: 8px 3px; align-items: baseline; }
+ #menu .stat-label { font-size: 12px; letter-spacing: 0; } #menu .stat-score b { font-size: 14px; } #menu .stat-score small { display: none; }
+ #menu .stat-bars { gap: 2px; grid-column: 1 / -1; grid-row: 2; } #menu .stat-bars i { height: 7px; }
+ #menu .menu-bottom { left: 18px; right: 18px; bottom: 34px; gap: 12px; }
+ #menu .map-block { flex: 1; width: auto; gap: 7px; }
+ #menu .record-holder { position: static; width: 100%; max-width: none; min-height: 29px; height: 29px; padding: 4px 8px; gap: 6px; }
+ #menu .record-holder b, #menu .record-holder.none b { font-size: 11px; } #menu .record-holder .rh-time { font-size: 12px; } #menu .record-holder .rh-label { display: none; }
+ #menu .record-holder .icon { width: 14px; height: 14px; }
+ #menu .map-preview { height: 88px; }
+ #menu .map-top { top: 8px; font-size: 10px; } #menu .map-top, #menu .map-caption { left: 11px; right: 11px; }
+ #menu .map-badge { display: none; } #menu .map-caption { bottom: 10px; } #menu .map-caption strong { font-size: 16px; letter-spacing: .5px; }
+ #menu .map-caption small { display: none; } #menu .map-distance { font-size: 21px; } #menu .map-distance small { display: inline; font-size: 9px; }
+ #menu .launch-block { flex: 0 0 128px; width: 128px; }
+ #menu .conditions { padding: 5px 0 8px; font-size: 10px; gap: 5px; justify-content: flex-end; }
+ #menu .conditions .icon { width: 13px; height: 13px; }
+ #menu .mp-button { height: 36px; padding: 0; justify-content: center; font-size: 13px; gap: 7px; letter-spacing: 1px; margin-bottom: 6px; }
+ #menu .mp-button small { display: none; } #menu .mp-button .icon { width: 17px; height: 17px; }
+ #menu #startBtn { height: 55px; padding: 0 10px; justify-content: center; font-size: 16px; letter-spacing: 1px; }
+ .launch-copy small, #menu #startBtn .icon { display: none; }
+ #menu .menu-footer { left: 18px; right: 18px; bottom: 14px; font-size: 10px; }
+ #menu .menu-footer > span:nth-child(2) { position: static; transform: none; letter-spacing: 1px; } #menu .footer-route { display: none; }
+ #menu .help-button { font-size: 11px; }
+ .dialog { padding: 21px; max-height: calc(100dvh - 28px); border-radius: 10px; }
+ .settings-dialog { margin: auto; width: 470px; }
+ .dialog-header h2 { font-size: 26px; } .map-list { grid-template-columns: 1fr 1fr; gap: 10px; }
+ .map-card canvas { height: 106px; } .map-card .map-card-label { padding: 11px; flex-wrap: wrap; gap: 10px; }
+ .map-card strong { font-size: 15px; } .map-card .map-card-location { font-size: 11px; } .map-card-distance { font-size: 18px; }
+ .map-tags { left: 8px; top: 8px; gap: 4px; } .map-tag { font-size: 10px; padding: 4px 5px; }
+ .route-options { display: block; padding-top: 18px; margin-top: 18px; }
+ .dialog-footer { align-items: flex-start; gap: 12px; } .dialog-footer small { font-size: 11px; }
+ #roomsBody { grid-template-columns: 1fr; gap: 20px; }
+ #menu .room-panel { top: auto; bottom: 42px; left: 18px; right: 18px; width: auto; height: 142px; padding: 10px 12px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 4px; }
+ #menu .room-panel.hidden { display: none; }
+ .room-title h3 { font-size: 16px; margin: 0; } .room-title .eyebrow, .room-title p, .rp-hint { display: none; }
+ .rp-players { overflow-y: auto; gap: 4px; } .rp-players li { min-height: 30px; padding: 3px 8px; font-size: 12px; }
+ .rp-actions { display: flex; gap: 5px; } .rp-actions .btn { margin: 0; padding: 7px; min-height: 31px; font-size: 12px; }
+ #menu.in-room .car-performance { top: auto; bottom: 198px; left: 18px; right: 18px; width: auto; padding: 13px 14px; }
+ #menu.in-room .car-controls { left: 18px; bottom: 280px; } #menu.in-room .showroom { bottom: 410px; }
+}
+
+@media (max-width: 760px) and (min-height: 481px) and (max-height: 720px) {
+ #menu .car-heading { top: 105px; }
+ #menu .car-heading h1 { margin: 7px 0; }
+ #menu .showroom { top: 173px; }
+}
+
+/* Short landscape frames keep all primary actions reachable. */
+@media (max-height: 480px) {
+ :root { --edge: 18px; --rail: 150px; --dock-bottom: 35px; }
+ #menu .menu-header { top: 12px; height: 36px; gap: 7px; } #menu .menu-header::after { bottom: -8px; }
+ #menu .brand b { font-size: 17px; } #menu .brand small { display: none; } #menu .brand-mark { height: 24px; }
+ #menu .profile-chip, #menu .settings-button { height: 34px; padding: 0 11px; font-size: 12px; }
+ #menu .profile-chip span { display: none; } #menu .settings-button { width: 36px; padding: 0; } #menu .settings-button span { display: none; }
+ #menu .music-player { position: static; flex-basis: 190px; height: 32px; margin-left: auto; margin-right: 0; }
+ #menu .music-step { height: 28px; flex-basis: 28px; } #menu .music-track { font-size: 11px; }
+ #menu .car-heading { top: 76px; left: 18px; right: auto; width: 170px; text-align: left; }
+ .car-identity { justify-content: flex-start; gap: 0; } .garage-kicker { display: none; } #menu .car-heading .eyebrow { font-size: 10px; letter-spacing: 2px; }
+ #menu .car-heading h1 { font-size: 26px; margin: 8px 0; }
+ #menu .car-heading #carSpecs, #menu .car-heading .car-character { display: none; }
+ #menu .car-performance, #menu.in-room .car-performance { top: 157px; left: 18px; right: auto; width: 170px; padding: 11px; }
+ #menu .car-performance::before, #menu .performance-header, #menu .performance-note { display: none; }
+ #menu .performance-stats { grid-template-columns: 1fr; gap: 9px; }
+ #menu .performance-stat { grid-template-columns: 40px 1fr 18px; gap: 5px; align-items: center; line-height: 1; }
+ #menu .stat-label { font-size: 10px; letter-spacing: 0; } #menu .stat-score { grid-row: 1; grid-column: 3; } #menu .stat-score b { font-size: 12px; } #menu .stat-score small { display: none; }
+ #menu .stat-bars { grid-row: 1; grid-column: 2; gap: 3px; } #menu .stat-bars i { height: 6px; }
+ #menu .showroom { top: 62px; bottom: 142px; left: 182px; right: 182px; } .showroom-tools { display: none; }
+ #menu .car-step { top: 40%; width: 33px; height: 40px; } #menu .car-step.previous { left: 195px; } #menu .car-step.next { right: 165px; }
+ #menu .car-controls, #menu.in-room .car-controls { left: 50%; width: 290px; bottom: 35px; padding: 9px 12px; gap: 7px; }
+ .control-heading { display: none; } .paint-heading { font-size: 10px; }
+ #menu .car-position button { padding: 6px 2px; font-size: 10px; }
+ #menu .paint-list { display: flex; overflow-x: auto; justify-content: flex-start; gap: 9px; padding: 3px 4px 6px; scrollbar-width: thin; scrollbar-color: #71865755 transparent; }
+ #menu .sw { flex: 0 0 22px; width: 22px; height: 22px; }
+ #menu .map-block { width: 170px; display: block; position: relative; }
+ #menu .map-preview { height: 80px; }
+ #menu .map-top, #menu .map-caption small { display: none; }
+ #menu .map-caption { left: 10px; right: 10px; bottom: 9px; } #menu .map-caption strong { font-size: 14px; } #menu .map-distance { font-size: 20px; }
+ #menu .record-holder { position: absolute; top: 6px; right: 6px; z-index: 2; width: auto; max-width: calc(100% - 12px); min-height: 25px; padding: 3px 7px; background: #0b161cdd; }
+ #menu .record-holder b, #menu .record-holder.none b, #menu .record-holder .rh-time { font-size: 10px; } #menu .record-holder .rh-label { display: none; }
+ #menu .conditions { padding: 5px 0 8px; font-size: 10px; gap: 5px; }
+ #menu .mp-button { height: 34px; padding: 0 12px; font-size: 13px; gap: 8px; margin-bottom: 6px; }
+ #menu .mp-button small, .launch-copy small { display: none; }
+ #menu #startBtn { height: 51px; padding: 0 12px; font-size: 17px; letter-spacing: 1px; } #menu #startBtn .icon { width: 15px; }
+ #menu .menu-footer { bottom: 10px; font-size: 9px; } #menu .menu-footer > span:nth-child(2) { display: none; } #menu .help-button { font-size: 10px; }
+ #menu .room-panel { top: 65px; bottom: 35px; width: 290px; padding: 13px; }
+ #menu.in-room .showroom { right: 300px; } #menu.in-room .car-controls { left: 44%; width: 240px; }
+ .dialog { max-height: calc(100dvh - 24px); padding: 22px; } .settings-dialog { margin: 12px auto; }
+}
+@media (max-height: 480px) and (max-width: 700px) {
+ :root { --edge: 14px; --rail: 112px; }
+ #menu .brand { gap: 8px; } #menu .brand b { font-size: 15px; }
+ #menu .music-player { flex-basis: 166px; } #menu .profile-chip { padding: 0 9px; gap: 5px; }
+ #menu .car-heading { left: 14px; top: 70px; width: 140px; } #menu .car-heading h1 { font-size: 21px; }
+ #menu .car-performance, #menu.in-room .car-performance { left: 14px; top: 143px; width: 140px; padding: 10px; }
+ #menu .performance-stat { grid-template-columns: 33px 1fr 14px; gap: 3px; } #menu .stat-label { font-size: 9px; }
+ #menu .showroom { top: 65px; bottom: 141px; left: 145px; right: 145px; }
+ #menu .car-step.previous { left: 160px; } #menu .car-step.next { right: 114px; }
+ #menu .car-controls { width: 245px; padding: 8px 10px; }
+ #menu .map-block { width: 140px; } #menu .map-preview { height: 75px; } #menu .map-caption strong { font-size: 12px; }
+ #menu .mp-button { padding: 0; justify-content: center; font-size: 12px; } #menu .mp-button .icon { width: 15px; }
+ #menu #startBtn { font-size: 14px; padding: 0 7px; justify-content: center; } #menu #startBtn .icon { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+ *, *::before, *::after { animation: none !important; transition: none !important; }
+}
