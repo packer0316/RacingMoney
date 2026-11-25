@@ -60,7 +60,7 @@ button:disabled { cursor: not-allowed; }
 #menu .stat-label { font-size: 14px; letter-spacing: 2px; }
 #menu .stat-score b { font-size: 17px; }
 #menu .stat-score small { font-size: 11px; }
-#menu .stat-bars { gap: 5px; }
+#menu .stat-bars { gap: 3px; }
 #menu .stat-bars i { height: 8px; border-radius: 1px; background: #a4b8aa0d; border-color: #a4b8aa1c; }
 #menu .stat-bars i.is-lit { background: linear-gradient(180deg, #e1ffa2, #b6dc72); border-color: #d8f98a6e; box-shadow: 0 0 9px #b9ed7424; }
 #menu .is-charging .stat-bars i { background: #a4b8aa0d; box-shadow: none; border-color: #a4b8aa1c; }

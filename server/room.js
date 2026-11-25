@@ -195,6 +195,8 @@ defineRoom({
       data = data || {};
       if (CARS[data.car]) me.car = data.car;
       me.color = Math.round(num(data.color, 0, 31, 0));
+      // 改裝代碼 (js/game/tuning.js code)：只是讓其他玩家畫出這台車的改裝外觀，格式不對就當原廠
+      me.m = typeof data.m === 'string' && data.m.length <= 96 && /^[a-z0-9_.\/]*$/.test(data.m) ? data.m : '';
       sendPlayers(room);
       return;
     }
@@ -232,7 +234,7 @@ defineRoom({
       for (var j = 0; j < st.order.length; j++) {
         var p = st.ps[st.order[j]];
         p.racing = true; p.loaded = false;
-        grid.push({ id: p.id, k: p.k, slot: slot, name: p.name, car: p.car, color: p.color });
+        grid.push({ id: p.id, k: p.k, slot: slot, name: p.name, car: p.car, color: p.color, m: p.m || '' });
         who[p.id] = { k: p.k, name: p.name, car: p.car, done: false };
         slot++;
       }

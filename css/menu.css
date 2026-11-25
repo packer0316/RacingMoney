@@ -70,7 +70,7 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .stat-score { display: flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
 .stat-score b { font-size: 14px; font-weight: 500; color: var(--acc); }
 .stat-score small { font-size: 9px; color: #80918b; }
-.stat-bars { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.stat-bars { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }   /* 滿分 10 (menu.js STAT_MAX) */
 .stat-bars i { height: 7px; border: 1px solid #ffffff12; border-radius: 1px; transform: skewX(-16deg); background: #ffffff0c; transition: background .24s, box-shadow .24s, border-color .24s; transition-delay: var(--light-delay); }
 .stat-bars i.is-lit { background: linear-gradient(180deg, #e5ffac, #b9e66e); border-color: #e0ffa899; box-shadow: 0 0 9px #c6f77738, inset 0 1px #f4ffd7aa; }
 .car-character { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid #ffffff10; font-size: 10px; letter-spacing: 1px; color: #9bad9f; white-space: nowrap; }

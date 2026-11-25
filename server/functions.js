@@ -1,7 +1,7 @@
 // 山道猴王 — 伺服器函式 (金碟遊樂場 GoldSaucer)
 // 由平台在沙箱裡執行，玩家端只能透過 GoldSaucer.server.call(name, input) 呼叫。
 //
-//   每位玩家的 state ：{ v, rv, total 累計積分, runs 完賽次數, best { 賽道代碼: 最佳毫秒 } }
+//   每位玩家的 state ：{ v, rv, total 累計積分, runs 完賽次數, best { 賽道代碼: 最佳毫秒 }, mods 改裝 (見 cleanMods) }
 //   全遊戲共用 shared：{ v, rv, records { 賽道代碼: [前 15 名] }, rooms { 房號: 多人房間登記 }, replays { 賽道代碼: { 玩家 id: 重播 } } }
 //
 // rv = 計時規則版本 (REC_V)。規則改了，舊的紀錄就不能比：rv 不是 REC_V 的賽道前 15 名、重播、個人最佳一律當作沒有 (下次寫入時清掉)，
@@ -36,6 +36,47 @@ var SHARED_MAX = 61000;    // shared 的安全上限 (平台 65536 bytes)
 // 計時規則版本：1 = 過起點線才開始計時；2 = 倒數 START 就開始計時 (2026-11-25)。玩家端送成績時帶 rv (js/ui/online.js)
 var REC_V = 2;
 
+// ---- 改裝 (js/game/tuning.js 的 PARTS / LIVERY_PRICE 要一致)：零件 id → [部位, 價格 (籌碼)]
+// 籌碼 = 平台用紅鑽兌換的遊戲幣 (goldsaucer.json currency：1 紅鑽 = 100 籌碼)；買零件時回傳 chips: { bet: 價格 } 由平台扣款
+var MODS = {
+  w_cast: ['wheel', 1500], w_flow: ['wheel', 4000], w_forged: ['wheel', 10000], w_mesh: ['wheel', 12000], w_deep: ['wheel', 14000],
+  t_sport: ['tire', 2000], t_rain: ['tire', 2500], t_drift: ['tire', 4000], t_semi: ['tire', 7000],
+  s_spring: ['susp', 2000], s_street: ['susp', 5500], s_race: ['susp', 12500],
+  b_4pot: ['brake', 2500], b_6pot: ['brake', 6500], b_race: ['brake', 13500],
+  e_ss: ['exhaust', 2000], e_ti: ['exhaust', 7000], e_race: ['exhaust', 12500]
+};
+// 彩繪 (純外觀)：id → 等級；價格依等級 (js/car/livery_data.js 的 sets)
+var LIVERIES = { lv_twin: 1, lv_slash: 1, lv_checker: 1, lv_flame: 2, lv_sponsor: 2, lv_touge: 2, lv_nine: 2, lv_hawaii: 2, lv_team: 3, lv_sakura: 3 };
+var LIVERY_PRICE = { 1: 5000, 2: 5000, 3: 5000 };   // 彩繪統一 5,000
+// 寫電腦：每台車各自買，一階、二階、三階依序升級
+var ECU_PRICE = [0, 3500, 9000, 18000];
+// 寫電腦的調校方向 (fit[車款].ecuC：0 均衡、1 極速、2 起步、3 甩尾；js/game/tuning.js 的 ECU_MAPS)，至少一階才能設、免費切換
+var ECU_MAPS = 4;
+var FIT_SLOTS = ['wheel', 'tire', 'susp', 'brake', 'exhaust', 'livery'];
+function modSlot(id) { return MODS[id] ? MODS[id][0] : LIVERIES[id] ? 'livery' : ''; }
+// 存檔裡的改裝資料只留認得的內容 { own: { id: 1 }, ecu: { 車款: 階 }, fit: { 車款: { 部位: id, 部位C: 顏色 } } }
+function cleanMods(m) {
+  var out = { own: {}, ecu: {}, fit: {} }, k, c, s;
+  if (!m || typeof m !== 'object') return out;
+  if (m.own) for (k in m.own) if (m.own[k] && modSlot(k)) out.own[k] = 1;
+  if (m.ecu) for (c in m.ecu) if (CARS[c]) { var lv = int(m.ecu[c], 0, 3, 0); if (lv) out.ecu[c] = lv; }
+  if (m.fit) for (c in m.fit) {
+    if (!CARS[c] || !m.fit[c]) continue;
+    var f = {}, any = false;
+    for (var i = 0; i < FIT_SLOTS.length; i++) {
+      s = FIT_SLOTS[i];
+      var id = m.fit[c][s];
+      if (id && out.own[id] && modSlot(id) === s) { f[s] = id; any = true; }
+      var col = int(m.fit[c][s + 'C'], 0, 9, 0);
+      if (col) { f[s + 'C'] = col; any = true; }
+    }
+    var em = int(m.fit[c].ecuC, 0, ECU_MAPS - 1, 0);
+    if (em && out.ecu[c]) { f.ecuC = em; any = true; }
+    if (any) out.fit[c] = f;
+  }
+  return out;
+}
+
 function int(v, lo, hi, d) {
   v = Math.round(Number(v));
   if (!(v === v)) return d;
@@ -68,7 +109,7 @@ function fresh(state) {
   var best = {};
   // 個人最佳是舊計時規則的就不沿用 (積分、完賽次數保留)
   if (s.best && s.rv === REC_V) for (var k in s.best) best[k] = s.best[k];
-  return { v: 1, rv: REC_V, total: Number(s.total) || 0, runs: Number(s.runs) || 0, best: best };
+  return { v: 1, rv: REC_V, total: Number(s.total) || 0, runs: Number(s.runs) || 0, best: best, mods: cleanMods(s.mods) };
 }
 // 目前計時規則的賽道紀錄 / 重播 (舊規則的當作沒有)
 function recsOf(sh) { return sh && sh.rv === REC_V && sh.records ? sh.records : {}; }
@@ -92,6 +133,19 @@ function cleanReplay(rp, ms) {
   var t = int(rp.t, 0, 3 * 3600 * 1000, 0), ts = int(rp.ts, 0, 60000, 0);
   if (Math.abs(t - ts - ms) > 1500) return null;
   return { v: 1, d: d, c: int(rp.c, 0, 63, 0), env: ENVS[rp.env] ? rp.env : 'sunny', ts: ts, t: t };
+}
+// 改裝代碼 (js/game/tuning.js 的 code / fromCode)：這台車裝了什麼，存進重播的 m，別人看重播 / 挑戰幽靈車時才畫得出改裝。
+// 以伺服器存的改裝資料為準 (不收玩家端送來的)："輪圈.色/輪胎/避震.色/卡鉗.色/排氣管/彩繪/寫電腦階數.調校方向"，全原廠 = ''
+function fitCode(mods, car) {
+  var f = (mods.fit && mods.fit[car]) || {}, out = [], i;
+  for (i = 0; i < FIT_SLOTS.length; i++) {
+    var s = FIT_SLOTS[i], id = f[s];
+    out.push(id && mods.own[id] && modSlot(id) === s ? id + (f[s + 'C'] ? '.' + f[s + 'C'] : '') : '');
+  }
+  var lv = (mods.ecu && mods.ecu[car]) || 0;
+  out.push(lv ? lv + (f.ecuC ? '.' + f.ecuC : '') : '');
+  while (out.length && !out[out.length - 1]) out.pop();
+  return out.join('/');
 }
 // UTF-8 位元組數 (平台用位元組算上限；中文名字一個字 3 bytes)
 function byteLen(s) {
@@ -144,7 +198,7 @@ function fit(sh) {
 }
 
 defineFunctions({
-  init: function (ctx) { return { v: 1, rv: REC_V, total: 0, runs: 0, best: {} }; },
+  init: function (ctx) { return { v: 1, rv: REC_V, total: 0, runs: 0, best: {}, mods: { own: {}, ecu: {}, fit: {} } }; },
 
   // 我的資料 + 所有賽道的前 15 名 (唯讀)
   // 紀錄用陣列回傳 [id, 名字, 毫秒, 車款, 有重播 1/0]：11 個榜 × 15 名都填滿時，物件格式會超過平台每次回傳 16 KB 的上限
@@ -156,7 +210,7 @@ defineFunctions({
       rows[k] = a;
     }
     // dataV：共用資料目前的計時規則版本 (確認舊紀錄真的刪掉了用)
-    var out = { result: { ok: true, id: ctx.player.id, name: nameOf(ctx), total: st.total, runs: st.runs, best: st.best, records: rows, dataV: sh.rv || 1 } };
+    var out = { result: { ok: true, id: ctx.player.id, name: nameOf(ctx), total: st.total, runs: st.runs, best: st.best, records: rows, dataV: sh.rv || 1, mods: st.mods, chips: Number(ctx.chips) || 0 } };
     // 計時規則改版後第一次有人讀：舊規則的賽道紀錄與重播直接從共用資料刪掉 (房間登記保留)
     if (sh.rv !== REC_V && (sh.records || sh.replays)) out.shared = fit({ records: {}, rooms: copyRooms(sh.rooms, nowOf(input)), replays: {} });
     // 自己的舊個人最佳也刪掉 (累計積分、完賽次數保留)
@@ -252,6 +306,7 @@ defineFunctions({
       for (var rk in oldReps) reps[rk] = oldReps[rk];
       for (var pid in cur) if (pid !== ctx.player.id) mineReps[pid] = cur[pid];
       var rp = REPLAY[input.track] ? cleanReplay(input.rp, ms) : null;
+      if (rp) { var mc = fitCode(st.mods, car); if (mc) rp.m = mc; }   // 這一趟用的改裝 (全原廠就不存)
       if (rp) mineReps[ctx.player.id] = rp;
       reps[key] = mineReps;
       out.shared = fit({ records: rec, rooms: sh.rooms || {}, replays: reps });
@@ -259,6 +314,56 @@ defineFunctions({
       out.result.replay = !!(out.shared.replays[key] && out.shared.replays[key][ctx.player.id]);
     }
     return out;
+  },
+
+  // ---- 改裝：買零件 (共用零件買一次每台車都能裝) 或寫電腦 (每台車各自買、依序升級)
+  // input { id, car }：買完順便裝到 car 上。籌碼不夠回 { ok: false, error: 'chips', need 還差多少 }，什麼都不扣
+  buyMod: function (state, input, ctx) {
+    var st = fresh(state), m = st.mods;
+    input = input || {};
+    var id = text(input.id, 24, ''), car = CARS[input.car] ? input.car : '';
+    var ecu = /^ecu[123]$/.test(id), price = 0, lv = 0;
+    if (ecu) {
+      if (!car) return { result: { ok: false, error: 'badCar' } };
+      lv = +id.charAt(3);
+      var cur = m.ecu[car] | 0;
+      if (lv <= cur) return { result: { ok: false, error: 'owned', mods: m } };
+      if (lv !== cur + 1) return { result: { ok: false, error: 'order', mods: m } };
+      price = ECU_PRICE[lv];
+    } else {
+      var slot = modSlot(id);
+      if (!slot) return { result: { ok: false, error: 'badPart' } };
+      if (m.own[id]) return { result: { ok: false, error: 'owned', mods: m } };
+      price = slot === 'livery' ? LIVERY_PRICE[LIVERIES[id]] : MODS[id][1];
+    }
+    var have = Math.floor(Number(ctx.chips) || 0);
+    if (have < price) return { result: { ok: false, error: 'chips', need: price - have, price: price, chips: have } };
+    if (ecu) m.ecu[car] = lv;
+    else {
+      m.own[id] = 1;
+      if (car) { var f = m.fit[car] || (m.fit[car] = {}); f[modSlot(id)] = id; }
+    }
+    return { state: st, result: { ok: true, id: id, car: car, price: price, mods: m }, chips: { bet: price, win: 0 } };
+  },
+
+  // 換裝 (不花錢)：input { car, slot, id ('' = 換回原廠), color 0～9 (輪圈 / 卡鉗 / 彈簧顏色) }
+  fitMod: function (state, input, ctx) {
+    var st = fresh(state), m = st.mods;
+    input = input || {};
+    var car = CARS[input.car] ? input.car : '', slot = text(input.slot, 12, ''), id = text(input.id, 24, '');
+    // 寫電腦：只換調校方向 (color = 0～3)
+    if (car && slot === 'ecu') {
+      if (!(m.ecu[car] >= 1)) return { result: { ok: false, error: 'notOwned', mods: m } };
+      var fe = m.fit[car] || (m.fit[car] = {}), mp = int(input.color, 0, ECU_MAPS - 1, 0);
+      if (mp) fe.ecuC = mp; else delete fe.ecuC;
+      return { state: st, result: { ok: true, mods: m } };
+    }
+    if (!car || FIT_SLOTS.indexOf(slot) < 0) return { result: { ok: false, error: 'badSlot' } };
+    if (id && (!m.own[id] || modSlot(id) !== slot)) return { result: { ok: false, error: 'notOwned', mods: m } };
+    var f = m.fit[car] || (m.fit[car] = {});
+    if (id) f[slot] = id; else delete f[slot];
+    if (input.color !== undefined) { var col = int(input.color, 0, 9, 0); if (col) f[slot + 'C'] = col; else delete f[slot + 'C']; }
+    return { state: st, result: { ok: true, mods: m } };
   },
 
   // ---- 多人房間登記簿 (房名、賽道、碰撞設定等；實際連線由房間腳本 server/room.js 處理)

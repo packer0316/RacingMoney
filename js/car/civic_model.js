@@ -204,6 +204,11 @@
     ],
   };
 
+  // 2026-11-25 車款平衡 (使用者要求：速度可以有快慢但不能差太多)：原廠 125 PS 自排，0～100 要將近 10 秒、極速 181 km/h，
+  //   和 GT-R 差太多。動力 x1.6、風阻小一點、起步輔助加大、抓地 / 出彎小噴射 / 氮氣稍微加強 (輕鬆上手：輔助最多)。
+  //   Node 物理模擬：0～100 約 5.9 秒、極速約 250 km/h，彎道衝刺單圈和其他車差 1 秒內。基礎規格 (vehicle.js SPEC) 不動，其他車款的預設值才不會跟著變
+  const BAL = { power: 1.6, cd: 0.275, mu: 1.26, launch: [8000, 10, 65], speedoMax: 280, shiftTableKeep: true, drift: { boost: 3550, nitro: 4450 } };
+
   PC.register('k8', {
     build(atlas) {
       const { body, glass, decal } = buildParts(atlas);
@@ -215,7 +220,8 @@
         tex: PC.uploadTex(RM.CivicTex.build(PC.texSize())), decalTex: null,
         map: MAP, mapU: INFO.uniforms, DROP,
         steerPos: [-0.37, 0.92, -0.26],
-        spec: () => RM.CIVIC_SPEC,
+        // 每次給一份新的 (makeSpec 會複製)：改裝 (js/game/tuning.js applySpec) 會直接改規格，不能改到共用的 RM.CIVIC_SPEC (否則每開一場就再疊一次加成)
+        spec: () => RM.makeSpec(BAL, null),
       };
     },
   });

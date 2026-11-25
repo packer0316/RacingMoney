@@ -148,8 +148,10 @@
       const base = on * (0.32 + (rpm / 7000) * 0.35);
       this.gOn.gain.setTargetAtTime(base * (0.35 + thr * 0.85), t, 0.05);
       this.gOff.gain.setTargetAtTime(base * (1 - thr) * 0.6, t, 0.06);
-      this.engGain.gain.setTargetAtTime((inside ? 0.75 : 0.95), t, 0.05);
-      const cut = 420 + rpm * (0.18 + thr * 0.22) + vtec * 900;
+      // loud：改裝排氣管 (js/game/tuning.js)，聲音更大、高頻更多 (更沙啞)
+      const loud = car.S.loud || 1;
+      this.engGain.gain.setTargetAtTime((inside ? 0.75 : 0.95) * Math.min(1.45, Math.sqrt(loud)), t, 0.05);
+      const cut = (420 + rpm * (0.18 + thr * 0.22) + vtec * 900) * (1 + (loud - 1) * 0.55);
       this.engLP.frequency.setTargetAtTime(inside ? cut * 0.7 : cut, t, 0.04);
       this.inBP.frequency.setTargetAtTime(350 + rpm * 0.16 + vtec * 500, t, 0.05);
       this.inG.gain.setTargetAtTime(on * (thr * (rpm / 7000) * 0.06 + vtec * 0.07) * (inside ? 1.3 : 0.7), t, 0.05);

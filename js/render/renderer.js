@@ -299,6 +299,12 @@
       shells.length = 0;
       if (f.car && f.car.tex) shells.push(f.car);
       if (f.cars) for (const d of f.cars) if (d && d.tex) shells.push(d);
+      // 改裝的彩繪貼圖 (js/car/tuning_vis.js)：沒有就綁一張 1×1 透明貼圖
+      const noLiv = this._noLiv || (this._noLiv = G.texture(new Uint8Array(4), { w: 1, h: 1, clamp: true }));
+      const bindLivery = (pc, d) => {
+        G.bindTex(12, d.livery || noLiv);
+        gl.uniform1f(pc.u('uLivOn'), d.livery ? 1 : 0);
+      };
       // 車輛零件 (list) 與車殼 (shellList)；不透明階段畫全部的車，幽靈車階段另外再用一次
       const drawCars = (list, shellList) => {
         propSetup();
@@ -332,6 +338,7 @@
           gl.uniform1f(pc.u('uPaintMetal'), d.paintMetal === undefined ? 0.45 : d.paintMetal);
           gl.uniform1f(pc.u('uShadowBias'), 0.12);
           gl.uniform1f(pc.u('uGlass'), 0);
+          bindLivery(pc, d);
           G.draw(d.mesh);
         }
       };
@@ -434,6 +441,7 @@
           gl.uniform1f(pc.u('uShadowBias'), 0.12);
         }
         gl.uniform1f(pc.u('uGlass'), 1);
+        bindLivery(pc, d);   // 擋風玻璃上緣的橫幅
         gl.enable(gl.CULL_FACE);
         const gm = d.glassMesh || d.mesh;
         gl.cullFace(gl.FRONT); G.draw(gm);

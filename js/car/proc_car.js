@@ -109,6 +109,14 @@
     nut: mat('#aeb2b6', 0.25, 1),
     calLogo: mat('#e9e9e6', 0.5),
     pad: mat('#0c0c0c', 0.9),
+    // 改裝 (js/car/tuning_vis.js)
+    letter: mat('#f2f2f2', 0.6, 0),          // 胎壁白字、輪圈肋上的字樣
+    tireSemi: mat('#262626', 0.95),         // 半熱熔胎：磨過的灰黑胎面
+    bolt: mat('#dadde0', 0.2, 1),           // 多片式輪圈的固定螺絲
+    boltGold: mat('#c8a24a', 0.25, 1),
+    polish: mat('#e8eaec', 0.06, 1),        // 鏡面拋光外唇
+    machined: mat('#d9dcdf', 0.1, 1),       // 鑽石切削輪緣
+    bobbin: mat('#c9ccd0', 0.25, 1),        // 浮動碟的浮動銷
   };
 
   // ------------------------------------------------------------------ 表面探測
@@ -467,18 +475,27 @@
   //      sw: [輪轂端, 輪輞端] 肋半寬, split: 雙肋 [輪轂端, 輪輞端] 的分開量, bevel 肋邊倒角,
   //      dish 輪唇深度, concave 輪轂比輻條外端內縮的量 (負值 = 輪轂凸出), lugs 螺帽數,
   //      rim 輪唇材質, rimDark 輪輞內壁 / 肋側面, spokeMat 肋正面, edgeMat 肋倒角 (省略 = 同正面), cap 中心蓋,
-  //      disc 碟盤半徑, slots 碟盤劃線數, caliper 卡鉗材質, pistons 外側活塞數 (1 = 小型浮動卡鉗, 2 = 對向多活塞) }
+  //      disc 碟盤半徑, slots 碟盤劃線數, caliper 卡鉗材質, pistons 外側活塞數 (1 = 小型浮動卡鉗, 2 = 對向多活塞, 3 = 六活塞) }
+  //   改裝用的選項 (js/car/tuning_vis.js；不給就和原廠一樣)：
+  //      style 'mesh' 交叉網狀輻條, tread 'sport' | 'semi' 胎紋, letters 胎壁白字, bolts { n, mat } 輪唇固定螺絲,
+  //      step 階梯外唇, channel 肋中央的凹槽材質, spokeText 肋上的白色字樣, drilled 碟盤打孔, float { hat } 兩片式浮動碟,
+  //      calScale 卡鉗大小倍率
   function buildWheel(o) {
+    // 新版產生器 (js/car/wheel_builder.js：細緻的斷面、曲線、材質與字樣)；沒載入時用下面的舊版
+    if (RM.WheelBuilder) return RM.WheelBuilder.build(o);
     const w = new MeshBuilder(), cal = new MeshBuilder();
     const R = o.R, RW = o.RW, Wd = o.Wd, h = Wd / 2, sh = R - RW;
     const rim = o.rim || MAT.rim, rimDark = o.rimDark || MAT.rimDark;
     const seg = 40, X1 = [1, 0, 0];
 
-    // ---- 輪胎：微拱的胎面 (兩道排水溝) → 圓肩 → 鼓起的胎壁 → 護圈唇
+    // ---- 輪胎：微拱的胎面 (排水溝) → 圓肩 → 鼓起的胎壁 → 護圈唇
+    //      原廠：四道溝；運動胎：中央一道 + 兩側各一道寬溝；半熱熔胎：只有兩道內側溝、胎面幾乎是光的
     const rT = (x) => R - 0.004 * sq(x / h);
     const half = [[0, R]];
-    for (const g of [h * 0.22, h * 0.56]) {
-      half.push([g - 0.0065, rT(g)], [g - 0.0045, rT(g) - 0.0065, MAT.groove], [g + 0.0045, rT(g) - 0.0065, MAT.groove], [g + 0.0065, rT(g)]);
+    const gw = o.tread === 'sport' ? 0.0085 : 0.0065, gi = gw - 0.002;
+    if (o.tread === 'sport') { half[0] = [0, rT(0) - 0.0065, MAT.groove]; half.push([gi, rT(0) - 0.0065, MAT.groove], [gw, rT(gw)]); }
+    for (const g of (o.tread === 'sport' ? [h * 0.52] : o.tread === 'semi' ? [h * 0.3] : [h * 0.22, h * 0.56])) {
+      half.push([g - gw, rT(g)], [g - gi, rT(g) - 0.0065, MAT.groove], [g + gi, rT(g) - 0.0065, MAT.groove], [g + gw, rT(g)]);
     }
     // 胎壁：胎肩下方一道細溝 → 微凸、較亮的字樣環帶 (上下各一道溝界定) → 輪圈護緣；
     // 整圈都是同一個斷面，靠材質的亮 / 霧差別讓胎壁有層次，不再是一整片死黑
@@ -486,12 +503,35 @@
     half.push([h - 0.03, rT(h - 0.03)], [h - 0.017, R - 0.008], [h - 0.007, R - Math.min(0.019, sh * 0.2)], [h - 0.001, R - Math.min(0.035, sh * 0.34)],
       [h + 0.0025, RW + sh * 0.6], [h + 0.0015, RW + sh * 0.575, sG], [h + 0.0045, RW + sh * 0.55, sT], [h + 0.0052, RW + sh * 0.46, sT], [h + 0.0042, RW + sh * 0.37, sT],
       [h + 0.001, RW + sh * 0.345, sG], [h + 0.002, RW + sh * 0.3], [h + 0.0035, RW + sh * 0.22, sT], [h + 0.001, RW + sh * 0.15], [h - 0.006, RW + sh * 0.09], [h - 0.013, RW + 0.006]);
-    revolve(w, half.slice(1).reverse().map(([x, r, m]) => [-x, r, m]).concat(half), MAT.tire, seg);
+    revolve(w, half.slice(1).reverse().map(([x, r, m]) => [-x, r, m]).concat(half), o.tread === 'semi' ? MAT.tireSemi : MAT.tire, seg);
+    // 胎壁白字：上下兩段弧，每個字是一塊微凸的白色小塊 (遠看就是一圈字樣)
+    if (o.letters) {
+      const rr = RW + sh * 0.5, lh = Math.min(0.019, sh * 0.3), xw = h + 0.0062;
+      const word = [1, 0.8, 1, 0.9, 1, 0.7, 0, 1, 0.9, 1, 0.8, 0, 0.7, 1, 0.8, 1, 0.9, 0.8];   // 0 = 字間空白
+      const unit = (lh * 0.95) / rr;   // 每個字的角寬
+      for (const a0 of [0, Math.PI]) {
+        const span = word.length * unit;
+        word.forEach((ww, i) => {
+          if (!ww) return;
+          const a = a0 - span / 2 + (i + 0.5) * unit, ca = Math.cos(a), sa = Math.sin(a);
+          w.boxAxes([xw, ca * rr, sa * rr], [0.0009, 0, 0], [0, (ca * lh) / 2, (sa * lh) / 2], [0, (-sa * unit * rr * ww * 0.8) / 2, (ca * unit * rr * ww * 0.8) / 2], MAT.letter);
+        });
+      }
+    }
 
-    // ---- 輪輞：輪緣 + 外側唇壁 (亮面)，輻條之後是深色內壁
+    // ---- 輪輞：輪緣 + 外側唇壁 (亮面)，輻條之後是深色內壁 (step：多片式的階梯外唇)
     const xl = h - 0.009, xs = xl - (o.dish !== undefined ? o.dish : 0.022), rb = RW - 0.016;
-    revolve(w, [[xl - 0.011, RW + 0.012], [xl - 0.003, RW + 0.0115], [xl, RW + 0.008], [xl, RW - 0.006], [xl - 0.004, RW - 0.011], [xs, rb]], rim, seg);
+    const lip = o.step ? [[xl - 0.004, RW - 0.011], [xl - 0.013, RW - 0.012], [xl - 0.016, RW - 0.021], [xs, rb]] : [[xl - 0.004, RW - 0.011], [xs, rb]];
+    revolve(w, [[xl - 0.011, RW + 0.012], [xl - 0.003, RW + 0.0115], [xl, RW + 0.008], [xl, RW - 0.006]].concat(lip), rim, seg);
     revolve(w, [[xs, rb], [xs - 0.03, rb - 0.004], [-h + 0.022, rb - 0.004], [-h + 0.012, RW - 0.006], [-h + 0.009, RW + 0.01]], rimDark, seg);
+    // 多片式：外唇與中心盤之間的一圈固定螺絲
+    if (o.bolts) {
+      const n = o.bolts.n || 36, rr = rb - 0.0085;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2, y = Math.cos(a) * rr, z = Math.sin(a) * rr;
+        w.cyl([xs - 0.001, y, z], [xs + 0.0045, y, z], 0.0046, 0.004, 6, o.bolts.mat || MAT.bolt, true);
+      }
+    }
 
     // ---- 輪轂：側壁 + 倒角 + 正面，中心蓋、螺帽
     const lugs = o.lugs || 5, rl = RW > 0.2 ? 0.057 : 0.05;
@@ -512,12 +552,13 @@
     const fx = (r) => xh + (xs - xh) * Math.pow(c01((r - rh) / (rb - rh)), 1.7);
     const dfx = (r) => ((xs - xh) * 1.7 * Math.pow(c01((r - rh) / (rb - rh)), 0.7)) / (rb - rh);
     const r0 = rh * 0.9, r1 = rb + 0.004, NS = 6;
-    const blade = (ca, sa, c0, c1, w0, w1) => {
-      const cb = -sa, sb = ca;
+    // rEnd：輻條外端半徑 (網狀輻條斜著走，外端要收進來才不會穿出輪輞)；deco：肋上的凹槽 / 字樣
+    const blade = (ca, sa, c0, c1, w0, w1, rEnd, deco) => {
+      const cb = -sa, sb = ca, re = rEnd || r1;
       const P = (r, s, x) => [x, ca * r + cb * s, sa * r + sb * s];
-      let prev = null, pn = null;
+      let prev = null, pn = null, prevC = null;
       for (let k = 0; k <= NS; k++) {
-        const t = k / NS, r = r0 + (r1 - r0) * t, c = c0 + (c1 - c0) * t, hw = w0 + (w1 - w0) * t, f = fx(r), bv = Math.min(bevel, hw * 0.45);
+        const t = k / NS, r = r0 + (re - r0) * t, c = c0 + (c1 - c0) * t, hw = w0 + (w1 - w0) * t, f = fx(r), bv = Math.min(bevel, hw * 0.45);
         const cur = [P(r, c - hw, f - bv - ts), P(r, c - hw, f - bv), P(r, c - hw + bv, f), P(r, c + hw - bv, f), P(r, c + hw, f - bv), P(r, c + hw, f - bv - ts)];
         const d = dfx(r), nl = Math.hypot(1, d), nf = [1 / nl, (-d * ca) / nl, (-d * sa) / nl];
         if (prev) {
@@ -527,16 +568,34 @@
           facing(w, prev[0], prev[1], cur[1], cur[0], sideM, [0, -cb, -sb]);
           facing(w, prev[4], prev[5], cur[5], cur[4], sideM, [0, cb, sb]);
         }
+        // 肋中央的凹槽 (鍛造圈的切削溝)：比正面略突出的一條深色細帶
+        if (deco && deco.channel && t >= 0.17 && t <= 0.83) {
+          const cw = hw * 0.28, cc = [P(r, c - cw, f + 0.0007), P(r, c + cw, f + 0.0007)];
+          if (prevC) facing(w, prevC[0], prevC[1], cc[1], cc[0], deco.channel, X1);
+          prevC = cc;
+        }
         prev = cur; pn = nf;
       }
+      // 肋上的白色字樣 (外端那一段)
+      if (deco && deco.text) {
+        const rr = r0 + (re - r0) * 0.7, f = fx(rr) + 0.0012, c = c0 + (c1 - c0) * 0.7, hw = (w0 + (w1 - w0) * 0.7) * 0.62;
+        w.boxAxes(P(rr, c, f), [0.0007, 0, 0], [0, ca * 0.022, sa * 0.022], [0, cb * hw, sb * hw], MAT.letter);
+      }
     };
-    const ns = o.spokes || 6, twin = o.style !== 'multi';
-    const sws = o.sw || (twin ? [0.0095, 0.0115] : [0.012, 0.016]), split = o.split || [0.021, 0.035];
+    const ns = o.spokes || 6, mesh = o.style === 'mesh', twin = o.style !== 'multi' && !mesh;
+    const sws = o.sw || (mesh ? [0.0048, 0.0056] : twin ? [0.0095, 0.0115] : [0.012, 0.016]), split = o.split || [0.021, 0.035];
     for (let s = 0; s < ns; s++) {
       const a = (s / ns) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
-      if (twin) for (const sg of [-1, 1]) blade(ca, sa, sg * split[0], sg * split[1], sws[0], sws[1]);
-      else blade(ca, sa, 0, 0, sws[0], sws[1]);
+      const deco = { channel: o.channel, text: o.spokeText && s % 3 === 0 };
+      if (mesh) {
+        // 交叉網狀：每個方向兩支往左右斜出去的細肋，和隔壁方向的肋交叉成菱形格
+        const c1 = rb * 0.5, rEnd = Math.sqrt(Math.max(0.01, r1 * r1 - c1 * c1));
+        for (const sg of [-1, 1]) blade(ca, sa, 0, sg * c1, sws[0], sws[1], rEnd);
+      } else if (twin) for (const sg of [-1, 1]) blade(ca, sa, sg * split[0], sg * split[1], sws[0], sws[1], 0, sg > 0 ? deco : null);
+      else blade(ca, sa, 0, 0, sws[0], sws[1], 0, deco);
     }
+    // 網狀輪圈的外環 (交叉肋的外端接在這一圈上)
+    if (mesh) revolve(w, [[fx(rb) - 0.012, rb - 0.016], [fx(rb) - 0.002, rb - 0.016], [fx(rb), rb - 0.012], [fx(rb), rb + 0.002]], spokeM, seg);
     // 氣嘴
     {
       const a = (0.5 / ns) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
@@ -553,7 +612,23 @@
     revolve(w, [[xd - td, rD], [xd - td * 0.7, rD]], MAT.disc, seg);
     revolve(w, [[xd - td * 0.7, rD - 0.001], [xd - td * 0.3, rD - 0.001]], MAT.groove, seg);
     revolve(w, [[xd - td * 0.3, rD], [xd, rD]], MAT.disc, seg);
-    revolve(w, [[xd, rHat], [xb + 0.004, rHat]], MAT.discHat, seg);
+    revolve(w, [[xd, rHat], [xb + 0.004, rHat]], o.float ? o.float.hat : MAT.discHat, seg);
+    // 兩片式浮動碟：鋁合金碟盤座 (上色) 的正面 + 一圈浮動銷
+    if (o.float) {
+      revolve(w, [[xd + 0.0012, rHat + 0.004], [xd + 0.0012, rl + 0.02]], o.float.hat, seg);
+      for (let k = 0; k < 10; k++) {
+        const a = ((k + 0.5) / 10) * Math.PI * 2, y = Math.cos(a) * (rHat + 0.004), z = Math.sin(a) * (rHat + 0.004);
+        w.cyl([xd - 0.002, y, z], [xd + 0.004, y, z], 0.0052, 0.0052, 8, MAT.bobbin, true);
+      }
+    }
+    // 打孔碟：一圈圈略帶弧度的小孔
+    if (o.drilled) for (let k = 0; k < 24; k++) {
+      for (let j = 0; j < 3; j++) {
+        const r = rHat + 0.016 + (rD - rHat - 0.026) * (j / 2), a = (k / 24) * Math.PI * 2 + j * 0.07;
+        const y = Math.cos(a) * r, z = Math.sin(a) * r;
+        w.cyl([xd - 0.0004, y, z], [xd + 0.0009, y, z], 0.0036, 0.0036, 8, MAT.groove, true);
+      }
+    }
     if (o.slots) for (let k = 0; k < o.slots; k++) {
       const a0 = (k / o.slots) * Math.PI * 2, hw = 0.0016;
       let prev = null;
@@ -566,8 +641,8 @@
     }
 
     // ---- 卡鉗：沿碟盤外緣的弧形鉗體，跨過碟盤；兩端收圓，外側有活塞座，頂面開窗看得到來令片
-    const calM = o.caliper || MAT.caliper, phi = big ? 0.5 : 0.36;
-    const xo = xd + calOut, xi = xd - td - 0.034, rc0 = rD - (big ? 0.056 : 0.044), rc1 = Math.min(rD + 0.017, rb - 0.007), ch = 0.007;
+    const calM = o.caliper || MAT.caliper, cs = o.calScale || 1, phi = (big ? 0.5 : 0.36) * cs;
+    const xo = xd + calOut, xi = xd - td - 0.034, rc0 = rD - (big ? 0.056 : 0.044) * cs, rc1 = Math.min(rD + 0.017, rb - 0.007), ch = 0.007;
     const NA = 10, TH = (k) => -phi + (2 * phi * k) / NA;
     const rows = [];
     for (let k = 0; k <= NA; k++) {
@@ -593,11 +668,11 @@
       for (let j = 1; j < 5; j++) { if (flip) cal.i.push(base, base + j + 1, base + j); else cal.i.push(base, base + j, base + j + 1); }
     }
     const rm = (rc0 + rc1) / 2 - 0.003;
-    for (const th of (big ? [-phi * 0.58, phi * 0.58] : [0])) {
-      const y = rm * Math.cos(th), z = rm * Math.sin(th), pr = big ? 0.016 : 0.019;
+    for (const th of (o.pistons >= 3 ? [-phi * 0.64, 0, phi * 0.64] : big ? [-phi * 0.58, phi * 0.58] : [0])) {
+      const y = rm * Math.cos(th), z = rm * Math.sin(th), pr = o.pistons >= 3 ? 0.0145 : big ? 0.016 : 0.019;
       cal.cyl([xo - 0.004, y, z], [xo + 0.006, y, z], pr, pr * 0.88, 16, calM, true);
     }
-    if (big && o.logo !== false) cal.box(xo + 0.0012, rm, 0, 0.0024, 0.012, 0.03, 0, MAT.calLogo);
+    if (big && o.logo !== false) cal.box(xo + 0.0012, o.pistons >= 3 ? rc1 - 0.0075 : rm, 0, 0.0024, 0.012, 0.03, 0, MAT.calLogo);   // 六活塞：字樣移到活塞上方
     {
       // 頂面開窗 (來令片背板)
       const base = cal.vcount, x0 = xd - td - 0.007, x1 = xd + 0.007, r = rc1 + 0.0006, N = 6;
@@ -610,12 +685,12 @@
     }
     return { wheel: w, caliper: cal };
   }
-  // 車款用：建好的 GL 網格 { wheel, caliper }
+  // 車款用：建好的 GL 網格 { wheel, caliper }；wheelOpts 留著給改裝 (js/car/tuning_vis.js) 依原廠尺寸做新輪圈
   const wheelSet = (o) => {
     const W = buildWheel(o);
     const sh = new MeshBuilder();
     sh.cyl([-o.Wd / 2, 0, 0], [o.Wd / 2, 0, 0], o.R, o.R, 16, MAT.shell, true);
-    return { wheel: W.wheel.build(), caliper: W.caliper.build(), wheelShadow: sh.build() };
+    return { wheel: W.wheel.build(), caliper: W.caliper.build(), wheelShadow: sh.build(), wheelOpts: o };
   };
 
   // ------------------------------------------------------------------ 車殼的精簡網格 (效能)

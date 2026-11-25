@@ -9,15 +9,18 @@
     p911: ['PORSCHE', '911 CARRERA <em>RS 2.7</em>', '2.7 L <span>210 PS</span> RR'] };
   // Relative game ratings, not real-world manufacturer specifications. Keep in sync with
   // vehicle.js / each model's SPEC_OVER: speed, launch, drift retention, steering / grip.
+  // 2026-11-25 車款平衡後重新評 (Node 物理模擬)：極速 AE86 242 / K8 250 / GR86 254 / 911 255 / R34 261 / R35 267 km/h (只差 25)，
+  //   0～100 911 4.4 / R35 4.5 / R34 4.8 / GR86 5.2 / K8 5.9 / AE86 6.0 秒，彎道衝刺單圈 (甩尾跑法) AE86 最快、其他差 1 秒內
   const PERFORMANCE = {
-    k8:   { scores: [2, 2, 4, 5], character: '輕鬆上手 · 靈活前驅' },
-    gr86: { scores: [4, 4, 4, 5], character: '均衡後驅 · 彎道好手' },
-    ae86: { scores: [3, 3, 6, 4], character: '輕量車身 · 飄移專家' },
-    r34:  { scores: [5, 5, 3, 4], character: '四驅抓地 · 強勁加速' },
-    r35:  { scores: [6, 6, 2, 4], character: '極速猛獸 · 四驅穩定' },
-    p911: { scores: [4, 5, 4, 3], character: '後置後驅 · 出彎爆發' },
+    k8:   { scores: [4, 4, 4, 5], character: '輕鬆上手 · 靈活前驅' },
+    gr86: { scores: [5, 5, 5, 5], character: '均衡後驅 · 彎道好手' },
+    ae86: { scores: [4, 4, 7, 4], character: '輕量車身 · 飄移專家' },
+    r34:  { scores: [5, 6, 3, 5], character: '四驅抓地 · 強勁加速' },
+    r35:  { scores: [6, 6, 2, 5], character: '極速猛獸 · 四驅穩定' },
+    p911: { scores: [5, 7, 4, 3], character: '後置後驅 · 起步最快' },
   };
   const METRICS = ['速度', '加速度', '飄移', '操控性'];
+  const STAT_MAX = 10;   // 性能評級的滿分 (2026-11-25 由 6 改成 10，原廠分數不變)
   const CAR_LABELS = { k8: 'K8', gr86: 'GR86', ae86: 'AE86', r34: 'R34', r35: 'R35', p911: '911' };
   const WEATHER = { sunny: '晴天', fog: '山霧', dusk: '黃昏', night: '夜晚', rain: '雨天' };
   const KEY = 'rm_preferences';
@@ -56,7 +59,8 @@
       }
       this.statRows = METRICS.map((label, index) => {
         const row = document.createElement('div'); row.className = 'performance-stat';
-        row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-score" aria-hidden="true"><b></b><small>/ 6</small></span><span class="stat-bars" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="6">${Array.from({ length: 6 }, (_, i) => `<i style="--light-delay:${index * 45 + i * 40}ms" aria-hidden="true"></i>`).join('')}</span>`;
+        // 滿分 10 (原廠分數不變，留空間給改裝加成)
+        row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-score" aria-hidden="true"><b></b><small>/ ${STAT_MAX}</small></span><span class="stat-bars" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="${STAT_MAX}">${Array.from({ length: STAT_MAX }, (_, i) => `<i style="--light-delay:${index * 45 + i * 28}ms" aria-hidden="true"></i>`).join('')}</span>`;
         $('performanceStats').append(row);
         return row;
       });
@@ -134,7 +138,7 @@
       document.querySelector(`#carList [data-val="${id}"]`).click();
     }
     update(dt, now) {
-      if (!this.available || this.game.state !== 'menu' || document.hidden || this.pointer || this.transition || this.reducedMotion.matches || document.querySelector('dialog[open]') || now < this.autoRotateAfter) {
+      if (!this.available || this.game.state !== 'menu' || document.hidden || this.pointer || this.transition || this.reducedMotion.matches || document.querySelector('dialog[open]') || now < this.autoRotateAfter || (RM.TuningUI && RM.TuningUI.open)) {
         this.autoRotateSpeed = 0;
         return;
       }
@@ -190,18 +194,39 @@
     }
     syncPerformance() {
       const id = this.game.opts.car;
-      if (this.ratedCar === id) return;
-      this.ratedCar = id;
+      // 改裝 (js/game/tuning.js)：加成另外用亮藍色的格子表示，分數旁邊標 +n
+      const fit = this.fitNow ? this.fitNow() : null, key = id + '|' + JSON.stringify(fit);
+      if (this.ratedKey === key) return;
+      this.ratedKey = key; this.ratedCar = id;
       const profile = PERFORMANCE[id] || PERFORMANCE.k8;
+      const bonus = fit && RM.Tuning ? RM.Tuning.ratingBonus(fit) : [0, 0, 0, 0];
       this.statRows.forEach((row, index) => {
-        const score = RM.clamp(Math.round(profile.scores[index]), 0, 6);
-        row.querySelector('b').textContent = score;
+        const score = RM.clamp(profile.scores[index], 0, STAT_MAX);
+        // 改裝有加也有減 (例如三片式深唇圈甩尾強但加速慢一點)：減掉的部分用紅色的格子表示
+        const plus = RM.clamp(bonus[index], -score, STAT_MAX - score), total = score + plus;
+        const tag = plus >= 0.05 ? `<i class="stat-plus">+${plus.toFixed(1)}</i>` : plus <= -0.05 ? `<i class="stat-minus">−${(-plus).toFixed(1)}</i>` : '';
+        row.querySelector('b').innerHTML = score + tag;
         const meter = row.querySelector('.stat-bars');
-        meter.setAttribute('aria-valuenow', score);
-        meter.setAttribute('aria-valuetext', `${score} / 6`);
-        [...meter.children].forEach((light, i) => light.classList.toggle('is-lit', i < score));
+        meter.setAttribute('aria-valuenow', total.toFixed(1));
+        meter.setAttribute('aria-valuetext', `${score} / ${STAT_MAX}` + (tag ? `，改裝 ${plus > 0 ? '+' : '−'}${Math.abs(plus).toFixed(1)}` : ''));
+        // 每一格：實心的部分 (--b) 與改裝加成 / 減少 (到 --t) 各填多少 (0～100%)，小數就是填一部分
+        const lo = Math.min(score, total), hi = Math.max(score, total);
+        [...meter.children].forEach((light, i) => {
+          const b = RM.clamp(lo - i, 0, 1), t = RM.clamp(hi - i, 0, 1);
+          light.classList.toggle('is-lit', b >= 1);
+          light.classList.toggle('is-tuned', t > b && plus > 0);
+          light.classList.toggle('is-cut', t > b && plus < 0);
+          light.style.setProperty('--b', (b * 100).toFixed(0) + '%');
+          light.style.setProperty('--t', (t * 100).toFixed(0) + '%');
+        });
       });
       $('carCharacter').textContent = profile.character;
+      // 成立的搭配加成 (性能欄下方一行)
+      let note = $('comboNote');
+      if (!note) { note = document.createElement('p'); note.id = 'comboNote'; note.className = 'combo-note'; $('performanceStats').after(note); }
+      const combos = fit && RM.Tuning ? RM.Tuning.combosOf(fit) : [];
+      note.hidden = !combos.length;
+      note.textContent = combos.length ? '搭配加成：' + combos.map((c) => c.name).join(' · ') : '';
     }
     changed(key) {
       if (key === 'car') {
@@ -213,6 +238,7 @@
       if (key === 'dir') this.drawMaps();
       if (key === 'quality') this.game.resize();
       this.sync(); this.save();
+      if (key === 'car' && RM.TuningUI && RM.TuningUI.open) RM.TuningUI.onCar();   // 改裝面板開著：換成這台車的零件
       if (key === 'car' && this.transition) this.animateCarChange();
     }
 
@@ -362,20 +388,36 @@
       this.drawMaps(); this.game.resize(); this.dirty = true;
       if (!this.game.loopStarted) { this.game.loopStarted = true; requestAnimationFrame(t => this.game.frame(t)); }
     }
+    // 車庫展示的改裝：改裝面板試裝中 (tryFit) 就用試裝的，否則用這台車實際裝的 (js/game/tuning.js)
+    fitNow() {
+      const T = RM.Tuning, car = this.game.opts.car;
+      if (!T) return null;
+      return this.tryFit && this.tryFit.car === car ? this.tryFit.fit : T.fitOf(car, RM.Platform && RM.Platform.mods);
+    }
     prepareCar() {
-      const g = this.game, model = RM.ProcCar.getPreview(g.opts.car, g.atlas), spec = model.spec(), car = new RM.Vehicle(g.road, spec);
+      const g = this.game, model = RM.ProcCar.getPreview(g.opts.car, g.atlas), spec = model.spec(), fit = this.fitNow();
+      if (fit) RM.Tuning.applySpec(spec, fit);
+      const car = new RM.Vehicle(g.road, spec);
       car.pos = [0, spec.cgH, spec.cgZ]; car.wheels.forEach(w => { if (w.front) w.steer = -.12; });
-      this.preview = { car, carModel: model, opts: g.opts, paint: RM.srgb(RM.CivicModel.COLORS[g.opts.color][1]), headOn: false, blink: {}, cam: { name: 'showroom' } };
+      const tuneVis = fit && RM.TuningVis ? RM.TuningVis.get(model, spec, fit, () => { this.dirty = true; }, RM.CivicModel.COLORS[g.opts.color][1]) : null;
+      this.preview = { car, carModel: model, opts: g.opts, paint: RM.srgb(RM.CivicModel.COLORS[g.opts.color][1]), headOn: false, blink: {}, cam: { name: 'showroom' }, tuneVis, fitKey: JSON.stringify([fit, g.opts.color]) };
       g.carModel = model; $('previewStatus').classList.add('hidden');
       if (g.state === 'menu' && !this.transition) $('startBtn').disabled = false;
     }
     render(force = false) {
       if (!this.available || document.hidden || !this.dirty || (this.transition && !force)) return;
       const g = this.game, r = g.renderer, gl = g.gl;
-      if (!this.preview || this.preview.carModel.id !== g.opts.car) this.prepareCar();
+      if (!this.preview || this.preview.carModel.id !== g.opts.car || this.preview.fitKey !== JSON.stringify([this.fitNow(), g.opts.color])) this.prepareCar();
       this.preview.paint = RM.srgb(RM.CivicModel.COLORS[g.opts.color][1]);
-      const rect = $('showroom').getBoundingClientRect(), aspect = Math.max(.25, rect.width / Math.max(1, rect.height)), distance = Math.max(6.7, 10 / aspect);
-      const cam = { eye: [Math.sin(this.angle) * distance * Math.cos(this.pitch), .7 + Math.sin(this.pitch) * distance, -Math.cos(this.angle) * distance * Math.cos(this.pitch)], target: [0, .62, 0], up: [0, 1, 0], fov: rect.width < 641 && rect.height < 180 ? 25 : 29 };
+      const rect = $('showroom').getBoundingClientRect(), aspect = Math.max(.25, rect.width / Math.max(1, rect.height)), distance = Math.max(6.7, 10 / aspect) * (this.zoom || 1);
+      // focus：改裝面板看特定部位 (輪子、尾管) 時的注視點；viewShift：面板開著時把車往左移 (相機往右平移)
+      const tg = this.focus || [0, .62, 0];
+      const cam = { eye: [tg[0] + Math.sin(this.angle) * distance * Math.cos(this.pitch), tg[1] + .08 + Math.sin(this.pitch) * distance, tg[2] - Math.cos(this.angle) * distance * Math.cos(this.pitch)], target: tg.slice(), up: [0, 1, 0], fov: rect.width < 641 && rect.height < 180 ? 25 : 29 };
+      const viewShift = innerWidth <= 760 && RM.TuningUI && RM.TuningUI.open ? 0 : this.viewShift;
+      if (viewShift) {
+        const fx = cam.target[0] - cam.eye[0], fz = cam.target[2] - cam.eye[2], l = Math.hypot(fx, fz) || 1, s = viewShift * (this.zoom || 1);
+        for (const p of [cam.eye, cam.target]) { p[0] += (-fz / l) * s; p[2] += (fx / l) * s; }
+      }
       const f = { terrain: [], road: [], props: [], decals: [], inst: [], dynamic: [], glass: [], shadowProps: [], shadowInst: [], shadowDynamic: [], background: [0, 0, 0], studio: true, studioGround: this.studioGround };
       g._carDraw.call(this.preview, f.dynamic, f.glass, f.shadowDynamic); f.car = this.preview._carShell;
       f.car.dirt = 0; f.dynamic.forEach(d => { d.dirt = 0; });
@@ -386,7 +428,7 @@
       if (g.state === 'menu' && !this.transition) $('startBtn').disabled = false;
     }
     show() { this.pauseAutoRotate(); this.preview = null; this.dirty = true; $('hud').classList.add('hidden'); $('flash').style.opacity = 0; this.game.resize(); this.sync(); }
-    hide() { this.pauseAutoRotate(); this.cancelTransition(); this.preview = null; RM.ProcCar.clearPreviews(); document.querySelectorAll('dialog[open]').forEach(d => d.close()); document.body.classList.remove('has-route-backdrop'); this.pointer = null; $('hud').classList.remove('hidden'); }
+    hide() { if (RM.TuningUI) RM.TuningUI.hide(); this.pauseAutoRotate(); this.cancelTransition(); this.preview = null; RM.ProcCar.clearPreviews(); document.querySelectorAll('dialog[open]').forEach(d => d.close()); document.body.classList.remove('has-route-backdrop'); this.pointer = null; $('hud').classList.remove('hidden'); }
   }
   RM.MenuUI = MenuUI;
 })();

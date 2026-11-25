@@ -6,7 +6,7 @@
   // 固定 attribute location
   const ATTR = { aPos: 0, aNormal: 1, aUV: 2, aColor: 3, aExtra: 4, iA: 5, iB: 6, iC: 7 };
   // 固定 sampler 單元
-  const UNITS = { uAlbedo: 0, uTex1: 1, uTex2: 2, uTex3: 3, uNoise: 4, uAtlas: 5, uTex6: 6, uShadowMap: 7, uCarA: 8, uCarB: 9, uCarC: 10, uSurface: 11 };
+  const UNITS = { uAlbedo: 0, uTex1: 1, uTex2: 2, uTex3: 3, uNoise: 4, uAtlas: 5, uTex6: 6, uShadowMap: 7, uCarA: 8, uCarB: 9, uCarC: 10, uSurface: 11, uLiv: 12 };   // uLiv：改裝彩繪 (shaders.js carFS)
 
   const GLU = {
     gl: null, aniso: null, maxAniso: 1,

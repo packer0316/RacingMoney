@@ -2,6 +2,7 @@
   "entry": "index.html",
   "server": "server/room.js",
   "functions": "server/functions.js",
+  "currency": { "name": "籌碼", "perDiamond": 100, "autoBuyIn": false },
   "cover": "cover.jpg",
   "orientation": "landscape",
   "aspectRatio": 1.7778

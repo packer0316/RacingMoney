@@ -1,0 +1,159 @@
+/* 改裝工廠 (js/ui/tuning_ui.js)：車庫右側面板 + 兌換籌碼對話框；性能欄的改裝加成 (menu.js syncPerformance) */
+:root { --tune: #7fe3ff; }
+
+/* 車庫入口 (選車 / 塗裝的面板最下方) */
+#menu .tune-button { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 2px; padding: 11px 14px; border: 1px solid #7fe3ff55; border-radius: 7px; background: linear-gradient(135deg, #12313c, #0d1c24); color: #e6f8ff; font-size: 15px; font-weight: 600; line-height: 1.3; letter-spacing: 1px; }
+#menu .tune-button .icon { width: 19px; height: 19px; color: var(--tune); }
+#menu .tune-button:hover { border-color: var(--tune); box-shadow: 0 0 22px #7fe3ff22; transform: translateY(-1px); }
+
+/* 面板開著：右側換成改裝面板，性能欄移到左邊 (看得到加成)，下方的地圖 / 出發先收起來 */
+#menu.in-tune .menu-bottom, #menu.in-tune .car-step, #menu.in-tune .car-heading, #menu.in-tune .showroom-tools { visibility: hidden; pointer-events: none; }
+/* 改裝時中下方的面板只留「車身塗裝」(和車庫同一個地方換車色)；選車款與改裝工廠按鈕收起來 */
+#menu.in-tune .car-controls .control-heading, #menu.in-tune .car-controls .car-position, #menu.in-tune .car-controls .tune-button { display: none; }
+#menu.in-tune .car-performance { left: var(--edge); right: auto; top: 300px; width: 235px; padding: 18px; }
+#menu.in-tune .performance-note { display: none; }
+#menu .tune-panel { position: absolute; z-index: 4; right: var(--edge); top: 104px; bottom: 40px; width: clamp(330px, 27vw, 410px); display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 14px; border: 1px solid var(--hairline); border-radius: 10px; background: linear-gradient(160deg, #14242bf6, #0b151bf6); box-shadow: 0 24px 80px #0009; color: var(--fg); }
+#menu .tune-panel.hidden { display: none; }
+.tune-head { display: flex; align-items: flex-start; justify-content: space-between; }
+.tune-head h3 { margin: 2px 0 0; font-size: 22px; letter-spacing: 2px; }
+.tune-head small { color: #9fb4b0; font-size: 12px; }
+.tune-head .eyebrow { color: var(--tune); }
+.tune-wallet { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #ffffff14; border-radius: 8px; background: #0006; font-size: 13px; color: #b9c9c4; }
+.tune-wallet .chip-ico { color: #ffcf4a; font-size: 17px; }
+.tune-wallet b { font-size: 19px; color: #ffe08a; font-variant-numeric: tabular-nums; }
+.tune-wallet small { color: #8aa09b; font-size: 11px; }
+.tune-wallet .btn { margin: 0 0 0 auto; width: auto; padding: 7px 12px; font-size: 13px; }
+.tune-slots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.tune-slots button { display: grid; justify-items: center; gap: 2px; padding: 7px 0 6px; border: 1px solid #ffffff10; border-radius: 6px; background: #ffffff05; color: #a8bab5; font-size: 11.5px; }
+.tune-slots button i { font-style: normal; font-size: 16px; line-height: 1; }
+.tune-slots button:hover { color: #e6f5f0; border-color: #7fe3ff55; }
+.tune-slots button.on { background: var(--tune); border-color: var(--tune); color: #0c2129; font-weight: 600; }
+.tune-note { margin: -2px 2px 0; font-size: 11.5px; color: #8ea39e; }
+.tune-list { flex: 1 1 0; min-height: 90px; overflow: auto; display: grid; align-content: start; gap: 5px; padding-right: 3px; scrollbar-width: thin; scrollbar-color: #4e6a70 transparent; }
+.tune-item { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 1px solid #ffffff10; border-radius: 7px; background: #ffffff05; color: var(--fg); text-align: left; }
+.tune-item:hover { border-color: #7fe3ff55; background: #ffffff09; }
+.tune-item.sel { border-color: var(--tune); background: #7fe3ff14; box-shadow: inset 3px 0 0 var(--tune); }
+.tune-item .tier { font-size: 11px; color: #ffcf4a; letter-spacing: -1px; }
+.tune-item .tier.t0 { color: #6d807c; }
+.tune-item .nm b { display: block; font-size: 14px; font-weight: 600; }
+.tune-item .nm small { display: block; font-size: 11px; color: #8fa39f; margin-top: 1px; }
+.tune-item em { font-style: normal; font-size: 12px; white-space: nowrap; }
+.tune-item em.price { color: #ffe08a; font-variant-numeric: tabular-nums; }
+.tune-item em.price::before { content: '◈ '; color: #ffcf4a; }
+.tune-item em.own { color: #9fe8b8; }
+.tune-item em.eq { color: #0c2129; background: var(--tune); padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.tune-detail { flex: 0 1 auto; min-height: 130px; overflow-y: auto; scrollbar-width: thin; padding: 12px 13px; border: 1px solid #ffffff14; border-radius: 8px; background: #00000059; }
+.tune-detail:empty { display: none; }
+.tune-detail h3 { margin: 0 0 5px; font-size: 17px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tune-detail h3 small { font-size: 12px; font-weight: 400; color: #8fa39f; }
+.tune-detail p { margin: 0 0 9px; font-size: 12.5px; line-height: 1.55; color: #c7d3cf; }
+.tune-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.tune-tags span { padding: 3px 8px; border-radius: 12px; background: #7fe3ff17; border: 1px solid #7fe3ff33; font-size: 11.5px; color: #b8e9f7; }
+.tune-tags span b { color: #fff; font-weight: 600; }
+.tune-tags span.bad { background: #ff8a8a14; border-color: #ff8a8a40; color: #ffb3b3; }
+.tune-fins { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; font-size: 12px; color: #9fb4b0; }
+.tune-fins button { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #0d171b; outline: 1px solid #ffffff33; background: var(--c); }
+.tune-fins button.on { outline: 2px solid var(--tune); outline-offset: 2px; }
+.tune-fins small { margin-left: 2px; color: #dfe9e5; }
+.tune-buy { display: flex; align-items: center; gap: 10px; }
+.tune-buy .btn { margin: 0; flex: 1; padding: 11px 12px; font-size: 14px; }
+.tune-buy .btn:disabled { opacity: .55; }
+.tune-buy small { color: #8fa39f; font-size: 11.5px; white-space: nowrap; }
+
+/* Livery collection: show the artwork and its palette before trying it on. */
+.tune-item.livery-item { grid-template-columns: 76px minmax(0, 1fr) auto; min-height: 64px; gap: 11px; }
+.livery-thumb { display: grid; place-items: center; height: 38px; overflow: hidden; border-radius: 4px; background: #d8dcd8; border: 1px solid #ffffff35; }
+.livery-thumb svg { display: block; width: 100%; height: auto; }
+.livery-item .nm small { font-size: 10px; letter-spacing: 1px; margin-top: 4px; }
+.livery-palette { display: flex; align-items: center; gap: 4px; margin: 12px 0; }
+.livery-palette i { display: block; width: 22px; height: 8px; background: var(--ink); border: 1px solid #ffffff26; }
+.livery-palette span { margin-left: 6px; color: #a8bab8; font-size: 10px; letter-spacing: 1.5px; }
+.livery-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 0 0 12px; }
+.livery-views button { padding: 7px 4px; border: 1px solid #ffffff25; border-radius: 4px; background: #ffffff05; color: #d9e4df; font-size: 12px; }
+.livery-views button:hover, .livery-views button:focus-visible { background: #7fe3ff15; border-color: #7fe3ff80; color: #c8f3ff; }
+
+/* 性能欄：改裝加成 (亮藍色格子 + 分數旁的 +n) */
+/* 一格裡：原廠 (綠，--b)、改裝加成 (藍，到 --t)、其餘是空格；加成是小數時只填一部分 */
+#menu .stat-bars i.is-tuned { background: linear-gradient(90deg, #c9ef86 0 var(--b), #6fd6f2 var(--b) var(--t), #a4b8aa0d var(--t)); border-color: #7fe3ff88; box-shadow: 0 0 10px #7fe3ff40; }
+#menu .stat-score .stat-plus { font-style: normal; font-size: 11px; color: var(--tune); margin-left: 3px; }
+/* 改裝的代價 (分數被扣掉的部分)：紅色斜紋格子 + 分數旁的 −n */
+#menu .stat-bars i.is-cut { background: linear-gradient(90deg, #c9ef86 0 var(--b), #ff8a7a99 var(--b) var(--t), #a4b8aa0d var(--t)); border-color: #ff8a7a88; }
+#menu .stat-score .stat-minus { font-style: normal; font-size: 11px; color: #ff9d8f; margin-left: 3px; }
+#menu .combo-note { margin: 9px 0 0; padding: 5px 8px; border-radius: 5px; background: #ffcf4a14; border: 1px solid #ffcf4a3d; color: #ffe08a; font-size: 11.5px; line-height: 1.4; }
+#menu .combo-note[hidden] { display: none; }
+
+/* 零件說明變長 (多項效果 + 搭配加成，說明區會捲動)：清單至少留三列 */
+#menu .tune-list { min-height: 150px; }
+
+/* 寫電腦的調校方向 */
+.tune-maps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+.tune-maps button { display: grid; gap: 2px; padding: 6px 4px; border: 1px solid #ffffff1c; border-radius: 6px; background: #ffffff06; color: #cfdcd8; text-align: center; }
+.tune-maps button b { font-size: 13px; font-weight: 600; }
+.tune-maps button small { font-size: 10px; color: #8fa39f; line-height: 1.25; }
+.tune-maps button:hover { border-color: #7fe3ff66; }
+.tune-maps button.on { border-color: var(--tune); background: #7fe3ff1c; color: #fff; box-shadow: inset 0 -2px 0 var(--tune); }
+
+/* 搭配加成 (零件說明裡) */
+.tune-combos { display: grid; gap: 6px; margin-bottom: 10px; }
+.tune-combos-h { font-size: 11.5px; color: #ffcf4a; letter-spacing: 1px; }
+.tune-combo { padding: 7px 9px; border: 1px dashed #ffcf4a40; border-radius: 6px; background: #ffcf4a08; font-size: 12px; color: #c7d3cf; }
+.tune-combo.on { border-style: solid; border-color: #ffcf4a99; background: #ffcf4a14; }
+.tune-combo > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tune-combo b { color: #ffe08a; font-size: 13px; }
+.tune-combo em { font-style: normal; font-size: 10.5px; padding: 1px 6px; border-radius: 8px; background: #ffcf4a; color: #2a2000; font-weight: 600; }
+.tune-combo .fx { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+.tune-combo .fx span { padding: 1px 6px; border-radius: 9px; background: #7fe3ff17; color: #b8e9f7; font-size: 11px; }
+.tune-combo .fx span b { color: #fff; font-size: 11px; }
+.tune-combo .parts { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 4px; }
+.tune-combo .parts i { font-style: normal; font-size: 11px; color: #8fa39f; }
+.tune-combo .parts i.ok { color: #9fe8b8; }
+
+/* 兌換籌碼 */
+.exchange-dialog { width: min(440px, 92vw); }
+.exchange-rate { margin: 4px 0 12px; font-size: 14px; color: #c9d6d1; }
+.exchange-rate b { color: #ffe08a; font-size: 18px; }
+.exchange-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+.exchange-quick button { padding: 9px 0; border: 1px solid #ff5a6e44; border-radius: 6px; background: #ff5a6e10; color: #ffc4cc; font-size: 13px; }
+.exchange-quick button:hover { border-color: #ff5a6e; background: #ff5a6e22; }
+.exchange-input { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #c9d6d1; }
+.exchange-input input { width: 110px; padding: 8px 10px; border: 1px solid #ffffff30; border-radius: 6px; background: #0006; color: #fff; font-size: 15px; }
+.exchange-input b { color: #ffe08a; font-variant-numeric: tabular-nums; }
+.exchange-wallet { margin: 12px 0 2px; font-size: 12.5px; color: #9fb4b0; }
+.exchange-note { margin: 4px 0 0; font-size: 12px; color: #8ea39e; line-height: 1.5; }
+
+@media (max-width: 1050px) {
+  #menu .tune-panel { width: 320px; top: 90px; }
+  #menu.in-tune .car-performance { width: 200px; top: 260px; }
+}
+@media (max-width: 760px) {
+  #menu .tune-panel { left: 12px; right: 12px; width: auto; top: auto; bottom: 12px; height: 58%; overflow-y: auto; }
+  #menu.in-tune .showroom { left: 0; right: 0; top: 106px; bottom: 61%; }
+  #menu.in-tune .car-performance { display: none; }
+  .tune-slots button span { font-size: 10px; }
+}
+@media (max-height: 620px) { #menu .tune-panel { overflow-y: auto; } }
+/* 改裝工廠面板裡的車色列：只有手機版用 (手機的改裝面板佔滿下半部，中下方的塗裝面板放不下)；電腦版在中下方換色 */
+.tune-paint { display: none; align-items: center; gap: 8px; font-size: 12px; color: #9fb4b0; }
+.tune-paint > span { flex-shrink: 0; letter-spacing: 1px; }
+.tune-paint-list { flex: 1; display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; }
+.tune-paint small { flex-shrink: 0; min-width: 4.5em; color: #dfe9e5; font-size: 12px; text-align: right; }
+.tune-sw { position: relative; width: 100%; aspect-ratio: 1; max-width: 20px; padding: 0; border: 2px solid #0d171b; border-radius: 50%; outline: 1px solid #cadcd229; box-shadow: inset 0 1px 3px #ffffff30; }
+.tune-sw:hover { outline-color: #e4f1d4aa; transform: translateY(-1px); }
+.tune-sw.on { outline: 2px solid var(--tune); outline-offset: 1px; }
+@media (max-width: 760px) {
+  .tune-paint { display: flex; }
+  .tune-paint-list { grid-template-columns: repeat(7, 1fr); }
+  #menu.in-tune .car-controls { visibility: hidden; pointer-events: none; }
+}
+
+/* 零件說明：放在畫面左上角 (tuning_ui.js setDetail)，右側面板只留顏色 / 調校方向與按鈕，清單可以多顯示幾個零件；性能欄移到左下角讓出位置 */
+#menu .tune-info { position: absolute; z-index: 4; left: var(--edge); top: 104px; width: clamp(300px, 25vw, 380px); max-height: max(170px, calc(100vh - 440px)); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #4e6a70 transparent; padding: 14px 15px 12px; border: 1px solid var(--hairline); border-radius: 10px; background: linear-gradient(160deg, #14242bf0, #0b151bf0); box-shadow: 0 18px 60px #0008; color: var(--fg); }
+#menu:not(.in-tune) .tune-info, #menu .tune-info:empty { display: none; }
+.tune-info h3 { margin: 0 0 6px; font-size: 18px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tune-info h3 small { font-size: 12px; font-weight: 400; color: #8fa39f; }
+.tune-info p { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: #c7d3cf; }
+.tune-info .tune-tags:last-child, .tune-info .tune-combos { margin-bottom: 0; }
+#menu.in-tune .car-performance { top: auto; bottom: 40px; }
+@media (min-width: 761px) { #menu .tune-detail { min-height: 0; flex-shrink: 0; } }
+@media (max-width: 1050px) { #menu .tune-info { top: 90px; width: 290px; } }
+@media (max-width: 760px) { #menu .tune-info { display: none; } }

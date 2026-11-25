@@ -645,11 +645,15 @@
       const COL = RM.CivicModel.COLORS, color = clamp(p.rp.c | 0, 0, COL.length - 1);
       // 和自己同款的車共用同一份模型；其他車款另外建一份 (同多人連線其他玩家的車)
       const model = !g.carAsset && g.carModel && g.carModel.id === I.car ? g.carModel : RM.ProcCar.getExtra(I.car, g.atlas);
-      this.veh = new RM.Vehicle(g.road, model.spec());
+      // 那筆紀錄的改裝 (rp.m)：規格 (車高、外傾) 與外觀 (輪圈、卡鉗、排氣管、彩繪) 都照他的；沒記就是原廠
+      const spec = model.spec(), fit = RM.Tuning ? RM.Tuning.fromCode(p.rp.m) : null;
+      if (fit) RM.Tuning.applySpec(spec, fit);
+      const tuneVis = fit && RM.TuningVis ? RM.TuningVis.get(model, spec, fit, null, COL[color][1]) : null;
+      this.veh = new RM.Vehicle(g.road, spec);
       this.veh.reset(race.startS, race.dir);
       p.g = null; p.road = g.road; p.dir = race.dir; p.S0 = this.veh.S;
       p.t = 0; p.sm = null; p.ended = false; p._nz = false; p.hints = [{ i: 0 }, { i: 0 }, { i: 0 }, { i: 0 }];
-      this.ctx = { car: this.veh, carModel: model, carAsset: null, opts: { color }, paint: RM.srgb(COL[color][1]), headOn: g.headOn, blink: { l: false, r: false, on: false, t: 0 }, cam: { name: 'chase' } };
+      this.ctx = { car: this.veh, carModel: model, carAsset: null, tuneVis, opts: { color }, paint: RM.srgb(COL[color][1]), headOn: g.headOn, blink: { l: false, r: false, on: false, t: 0 }, cam: { name: 'chase' } };
       this._draw = { list: [], glass: [], shells: [], alpha: 0 }; this._ns = [];
       this.t = 0; this.fade = 1; this.alpha = 0; this._gapAt = 0; this._txt = null;
       // 每一筆取樣「到那時為止跑最遠的進度」(公尺，單調遞增)：算自己和幽靈車差幾秒用

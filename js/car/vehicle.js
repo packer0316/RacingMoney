@@ -535,7 +535,7 @@
         const kappa = (w.w * S.tireR - vLong) / denomV;
         const alpha = Math.atan2(vLat, Math.max(Math.abs(vLong), 1.2));
         w.kappa = kappa; w.alpha = alpha;
-        let mu = muSurf[w.surf] * (w.front ? (this.drifting ? 1.08 : 1) : S.muRear * (this.drifting ? 0.36 : 1)) * (1 - 0.07 * (Fz / 3500 - 1)) * (1 - wet * 0.28);
+        let mu = muSurf[w.surf] * (w.front ? (this.drifting ? 1.08 : 1) : S.muRear * (this.drifting ? 0.36 : 1)) * (1 - 0.07 * (Fz / 3500 - 1)) * (1 - wet * (S.wetK || 0.28));   // wetK：半熱熔胎下雨掉得多 (js/game/tuning.js)
         w.mu = mu;
         tire(Fz, kappa, alpha, mu, tf);
         let Fx = tf[0], Fy = tf[1];
@@ -885,6 +885,8 @@
       S.wheelI = [Math.max(0.3, tireR * tireR * 12), Math.max(0.3, tireR * tireR * 10)];
     }
     if (!S.shiftTableKeep) delete S.shiftTable;
+    // power：遊戲平衡用的動力倍率 (扭力表照原廠數字寫，這裡再乘上去；2026-11-25 車款平衡，見各車款檔的 SPEC_OVER)
+    if (S.power && S.power !== 1) S.torque = S.torque.map(([rpm, t]) => [rpm, t * S.power]);
     return S;
   }
 

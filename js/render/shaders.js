@@ -440,6 +440,7 @@ void main(){
   const propFS = HEAD + LIGHT + PAINT + `
 in vec3 vPos; in vec3 vN; in vec2 vUV; in vec4 vCol; in vec4 vExt; in vec3 vLocal;
 uniform sampler2D uAtlas;
+uniform mat4 uModel;   // 鋁圈材質要把輪子座標的方向轉到世界座標
 uniform highp sampler2DArray uSurface;
 uniform sampler2D uNoise;
 uniform float uSurfaceRange;
@@ -544,6 +545,41 @@ void main(){
   } else if (mode==11){
     // 地區霓虹 (檳榔攤)：常亮，夜間更亮
     emis = alb*(1.2 + night*4.0);
+  } else if (mode>=40 && mode<=44){
+    // ---- 鋁圈 / 輪胎 (js/car/wheel_builder.js)：輪子的區域座標 x = 輪軸，(y, z) 是輪面。強度參數在 vExt.w
+    float prm = vExt.w;
+    float rr = length(vLocal.yz) + 1e-5;
+    vec3 tanW = normalize(mat3(uModel)*vec3(0.0, -vLocal.z/rr, vLocal.y/rr));   // 圓周方向
+    vec3 radW = normalize(mat3(uModel)*vec3(0.0, vLocal.y/rr, vLocal.z/rr));    // 半徑方向
+    float far = smoothstep(2.5, 14.0, surfaceDist);
+    if (mode==40 || mode==44){
+      // 車削 (溝紋沿圓周) / 拉絲 (沿半徑)：異向反光 —— 把法線往「垂直溝紋、朝向視線」彎，亮光就會沿著垂直溝紋的方向拉長
+      vec3 g = mode==40 ? tanW : radW;
+      vec3 V = normalize(uCamPos.xyz - vPos);
+      vec3 bent = cross(cross(g, V), g);
+      if (dot(bent, n) < 0.0) bent = -bent;
+      n = normalize(mix(n, normalize(bent), 0.62*prm*(1.0 - far*0.5)));
+      // 近看才看得到的細車削紋 (每 0.8 mm 一道；遠了就淡掉，不閃爍)
+      float f = mode==40 ? rr*1250.0 : atan(vLocal.z, vLocal.y)*rr*900.0;
+      float aa = fwidth(f), gr = sin(f*6.2831853);
+      alb *= 1.0 + 0.07*prm*gr*(1.0 - smoothstep(0.25, 0.7, aa));
+      if (mode==44) alb *= 0.93 + 0.14*texture(uNoise, vec2(atan(vLocal.z, vLocal.y)*4.0, rr*0.4)).r;
+    } else if (mode==41){
+      // 烤漆：亮光透明漆；金屬漆有細亮片 (近看才有)
+      coat = 1.0;
+      float fl = texture(uNoise, vLocal.yz*34.0 + vLocal.x*7.0).r;
+      alb *= 1.0 + (fl - 0.5)*0.22*prm*(1.0 - far);
+    } else if (mode==42){
+      // 陽極 / 霧面金屬：極細的顆粒感 (近看才有，遠了就是均勻的霧面)
+      vec4 nz = texture(uNoise, vLocal.yz*70.0 + vLocal.x*23.0);
+      alb *= 1.0 + (nz.g - 0.5)*0.07*prm*(1.0 - far);
+      coat = 0.25;
+    } else {
+      // 橡膠：胎面 / 胎壁有細微的明暗 (磨耗、脫模劑)
+      float t = texture(uNoise, vec2(atan(vLocal.z, vLocal.y)*3.0, vLocal.x*6.0 + rr*4.0)).r;
+      alb *= 0.82 + 0.36*t;
+      rough = max(rough, 0.78);
+    }
   }
   if (vExt.y > 0.0) emis += alb*vExt.y*(vExt.w > 0.5 ? night : 1.0);
   float sh = shadowFactor(vPos, n);
@@ -591,6 +627,18 @@ uniform vec4 uMapA; uniform vec4 uMapB; uniform vec4 uMapC; uniform vec4 uMapD; 
 uniform vec4 uMapF;
 // 車尾的同類投影 (啟用、前界 z、外界 x、尾燈面頂高)。
 uniform vec4 uMapG;
+// 改裝的彩繪 (js/car/tuning_vis.js)：2048×1024，列 0～255 右側 (車頭在右)、256～511 左側 (車頭在左)、
+// 512～959 頂面 (車頭在左、上 = 車的右側)、960～1023 擋風玻璃上緣的橫幅。兩側分開，文字兩邊都是正的
+uniform sampler2D uLiv; uniform float uLivOn;
+vec4 liveryAt(vec3 p, vec3 nl, float wT){
+  float zf = clamp((p.z - uMapB.z)/(uMapB.w - uMapB.z), 0.0, 1.0);
+  float yv = clamp((uMapB.y - p.y)/(uMapB.y - uMapB.x), 0.0, 1.0);
+  float sw = smoothstep(0.3, 0.55, abs(nl.x))*(1.0 - wT);
+  vec4 s = sw > 0.0 ? texture(uLiv, p.x > 0.0 ? vec2(1.0 - zf, yv*0.25) : vec2(zf, 0.25 + yv*0.25)) : vec4(0.0);
+  vec4 t = wT > 0.0 ? texture(uLiv, vec2(zf, 0.5 + (0.5 - clamp(p.x/uMapC.x, -1.0, 1.0)*0.5)*0.4375)) : vec4(0.0);
+  float as = s.a*sw, at = t.a*wT, a = as + at;
+  return a > 1e-4 ? vec4((s.rgb*as + t.rgb*at)/a, min(a, 1.0)) : vec4(0.0);
+}
 // 環繞帶 u：由車尾中心沿水平輪廓繞過車尾角 → 車側 → 繞過車頭角 → 車頭中心的弧長
 float wrapU(float ax, float z){
   float dz = z - uMapA.y;
@@ -670,6 +718,14 @@ void main(){
     alpha = gl_FrontFacing ? clamp(0.8 + fres*0.19, 0.0, 0.98) : 0.08 + fres*0.25;
     vec3 det = A.rgb*(mix(uGroundColor.rgb, uSkyColor.rgb, 0.6) + uSunColor.rgb*0.25);
     c = mix(c, det, A.a); alpha = max(alpha, A.a);
+    // 彩繪：擋風玻璃上緣的橫幅 (車頭那一半、朝前的玻璃、車頂下方 4～20 cm；從車頭看過來文字是正的)
+    if (uLivOn > 0.5 && vLocal.z < (uMapB.z + uMapB.w)*0.5 && nl.z < -0.2) {
+      float bv = (uMapB.y - 0.04 - vLocal.y)/0.16;
+      if (bv > 0.0 && bv < 1.0) {
+        vec4 bn = texture(uLiv, vec2(0.5 - vLocal.x/(uMapC.x*1.6), 0.9395 + bv*0.0586));
+        c = mix(c, bn.rgb*(mix(uGroundColor.rgb, uSkyColor.rgb, 0.6) + uSunColor.rgb*0.3), bn.a); alpha = max(alpha, bn.a);
+      }
+    }
     c += vec3(1.0,0.02,0.008)*brakeHi*4.0/uSunColor.w;
   } else {
     // ---- 車身：烤漆 (貼圖 alpha = 0，兩層車漆) 或貼圖材質 (飾板、燈具…)
@@ -689,7 +745,8 @@ void main(){
       float fws = max(length(dFdx(qs)), length(dFdy(qs))), fwt = max(length(dFdx(qt)), length(dFdy(qt)));
       if (A.a < 0.996){
         vec4 flk = wT > 0.5 ? paintFlake(qt, fwt) : paintFlake(qs, fws);
-        vec3 base = uPaint*(1.0 - uDirt*0.3*smoothstep(0.42, 0.16, vLocal.y));
+        vec4 LV = uLivOn > 0.5 ? liveryAt(vLocal, nl, wT) : vec4(0.0);   // 彩繪貼紙 (亮光漆面，和烤漆一樣打光)
+        vec3 base = mix(uPaint, LV.rgb, LV.a)*(1.0 - uDirt*0.3*smoothstep(0.42, 0.16, vLocal.y));
         cp = carPaint(base, n, vPos, uPaintMetal, flk, ao, sh, ra, ck);
       }
       if (A.a > 0.004) cm = lightSurface(A.rgb, n, vPos, clamp(max(Bm.b, ra), 0.0, 1.0), Bm.a, ao, sh, max(lens, lensT)*ck);

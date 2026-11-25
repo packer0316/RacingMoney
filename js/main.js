@@ -372,6 +372,11 @@
       this.carAsset = carDef.model ? RM.CarModels.assets['player:' + carDef.id] : null;
       if (!this.carAsset) this.carModel = RM.ProcCar.get(carDef.id, this.atlas);
       const spec = this.carAsset ? RM.makeSpec(carDef.spec, this.carAsset.dims) : this.carModel.spec();
+      // 改裝 (js/game/tuning.js)：性能套進規格、外觀交給 _carDraw。看重播時用那筆重播記的改裝 (rp.m，伺服器存的改裝代碼)：
+      // 輪圈 / 卡鉗 / 排氣管 / 彩繪 / 車高照那位玩家的畫，引擎聲與換檔點也跟著他的規格；沒記 (舊重播、全原廠) 就是原廠
+      const fit = !RM.Tuning ? null : this.replay ? RM.Tuning.fromCode(this.replay.rp.m) : RM.Tuning.fitOf(carDef.id, RM.Platform && RM.Platform.mods);
+      if (fit) RM.Tuning.applySpec(spec, fit);
+      this.tuneVis = fit && RM.TuningVis && !this.carAsset ? RM.TuningVis.get(this.carModel, spec, fit, null, RM.CivicModel.COLORS[o.color][1]) : null;
       this.car = new RM.Vehicle(this.road, spec);
       this.car.abs = o.abs;
       this.car.wet = env.wet;
@@ -934,7 +939,8 @@
       const M = (this._cm = this._cm || m4.c());
       m4.fromQP(M, car.q, car.pos);
       const off = (this._off = this._off || m4.c());
-      m4.ident(off); off[13] = -car.S.cgH; off[14] = -car.S.cgZ;
+      // S.lower：改裝避震把車身 (連同重心) 降低的量。車身相對重心不動，所以要用原本的重心高度往下畫
+      m4.ident(off); off[13] = -car.S.cgH - (car.S.lower || 0); off[14] = -car.S.cgZ;
       const body = (this._bodyM = this._bodyM || m4.c());
       m4.mul(body, M, off);
       const brake = car.brake > 0.05 ? 1 : 0;
@@ -973,27 +979,34 @@
       if (cm.glass) glass.push({ mesh: cm.glass, model: body, lights, lights2, depthBias: 260 });
       // 陰影用低模、車窗用只含玻璃三角形的網格 (proc_car.js shellExtras)
       shadowDyn.push({ mesh: cm.shellShadow || cm.shell, model: body });
-      this._carShell = { mesh: cm.shell, glassMesh: cm.shellGlass || cm.shell, tex: cm.tex, map: cm.mapU, model: body, paint: this.paint, paintMetal: pm, lights, lights2, dirt: 0.2 };
+      // 改裝的外觀 (js/car/tuning_vis.js)：輪子 / 卡鉗換成新的網格、多一組排氣尾管、彩繪貼圖、外傾角
+      const V = this.tuneVis && this.tuneVis.model === cm ? this.tuneVis : null;
+      this._carShell = { mesh: cm.shell, glassMesh: cm.shellGlass || cm.shell, tex: cm.tex, map: cm.mapU, model: body, paint: this.paint, paintMetal: pm, lights, lights2, dirt: 0.2, livery: V && V.livery ? V.livery.tex : null };
+      if (V && V.exhaust) list.push({ mesh: V.exhaust, model: M, shadowBias: 0.12 });
       // 輪子
       this._wm = this._wm || [m4.c(), m4.c(), m4.c(), m4.c()];
       const rot = (this._rm = this._rm || m4.c());
+      const camber = ((car.S.camber || 0) * Math.PI) / 180, qc = quat.axisAngle([0, 0, 0, 1], [0, 0, 1], camber);   // 上緣往內倒 (左輪的 yaw 多轉半圈，同一個角度兩邊都往內)
+      const wheelMesh = (V && V.wheel) || cm.wheel, calMesh = (V && V.caliper) || cm.caliper;
+      const wtex = RM.WheelBuilder ? RM.WheelBuilder.texture() : null;   // 胎壁字樣、中心蓋徽章、卡鉗字樣 (js/car/wheel_builder.js)
       for (let k = 0; k < 4; k++) {
         const w = car.wheels[k];
         const yaw = -w.steer + (w.left ? Math.PI : 0);
         const spin = w.left ? w.angle : -w.angle;
         const qy = quat.axisAngle([0, 0, 0, 1], [0, 1, 0], yaw), qx = quat.axisAngle([0, 0, 0, 1], [1, 0, 0], spin);
-        const qq = quat.mul([0, 0, 0, 1], qy, qx);
+        const qyc = camber ? quat.mul([0, 0, 0, 1], qy, qc) : qy;
+        const qq = quat.mul([0, 0, 0, 1], qyc, qx);
         m4.fromQP(rot, qq, [w.anchor[0], w.anchor[1] - w.len, w.anchor[2]]);
         m4.mul(this._wm[k], M, rot);
-        list.push({ mesh: cm.wheel, model: this._wm[k], paint: this.paint, shadowBias: 0.08 });
+        list.push({ mesh: wheelMesh, tex: wtex, model: this._wm[k], paint: this.paint, shadowBias: 0.08 });
         shadowDyn.push({ mesh: cm.wheelShadow || cm.wheel, model: this._wm[k] });
-        if (cm.caliper) {
+        if (calMesh) {
           // 卡鉗只跟著轉向、不跟著輪子轉：前輪夾在碟盤後側、後輪夾在前側
           this._km = this._km || [m4.c(), m4.c(), m4.c(), m4.c()];
           const qk = quat.axisAngle([0, 0, 0, 1], [1, 0, 0], (w.left ? -1.2 : 1.2) * (w.front ? 1 : -1));
-          m4.fromQP(rot, quat.mul([0, 0, 0, 1], qy, qk), [w.anchor[0], w.anchor[1] - w.len, w.anchor[2]]);
+          m4.fromQP(rot, quat.mul([0, 0, 0, 1], qyc, qk), [w.anchor[0], w.anchor[1] - w.len, w.anchor[2]]);
           m4.mul(this._km[k], M, rot);
-          list.push({ mesh: cm.caliper, model: this._km[k], shadowBias: 0.08 });
+          list.push({ mesh: calMesh, tex: wtex, model: this._km[k], shadowBias: 0.08 });
         }
       }
       // 方向盤

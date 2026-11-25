@@ -385,12 +385,15 @@
   const SPEC_OVER = {
     mass: 950 + 75, cgH: 0.5, frontW: 0.535, drive: 'FR', cyl: 4, idle: 850, redline: 7600, cut: 8000, engI: 0.11,
     torque: [[0, 70], [1000, 100], [2000, 118], [3000, 130], [4000, 140], [5200, 149], [6000, 146], [6600, 138], [7600, 118], [8200, 80]],
-    ratios: [3.587, 2.022, 1.384, 1.0, 0.861], final: 4.3, rev: 3.484, tireRRef: TIRE_R, speedoMax: 200,
-    mu: 1.15, muRear: 1.04, cd: 0.388, area: 1.8, brakeF: 1500, brakeR: 800, steerMax: 37 * Math.PI / 180, stiff: 1.1,
+    ratios: [3.587, 2.022, 1.384, 1.0, 0.861], final: 3.8, rev: 3.484, tireRRef: TIRE_R, speedoMax: 280,
+    mu: 1.15, muRear: 1.04, cd: 0.25, area: 1.8, brakeF: 1500, brakeR: 800, steerMax: 37 * Math.PI / 180, stiff: 1.1,
     // 性能調校：launch 起步輔助 [推力 N, 開始遞減, 歸零 (km/h)]；drift 甩尾 / 氮氣 (沒列的項目用 vehicle.js 的預設值，也就是 K8 的手感)
-    //   車輕、馬力小：甩尾角最大、甩尾中最不掉速、集氣最快；出彎小加速較弱、極速最低 (約 200 km/h)
-    launch: [4300, 10, 65],
-    drift: { angle: 0.38, drag: 1.15, charge: 1.12, boost: 3200 },
+    //   強項是甩尾 (彎道衝刺單圈最快)：甩尾角最大、集氣最快；直線最弱 (0～100 約 6.0 秒、極速約 242 km/h)
+    //   原廠尾牙 4.3 在五檔紅線只有 224 km/h (極速被紅線卡住)，平衡時改成 3.8、風阻調小
+    // 2026-11-25 車款平衡 (使用者要求：速度可以有快慢但不能差太多，各車有各自的強項)：power 動力倍率 (扭力表維持原廠數字)、
+    //   起步輔助、風阻、甩尾 / 氮氣一起調。Node 物理模擬：彎道衝刺單圈六台車差 1 秒內，0～100 km/h 4.4～6.0 秒，極速 242～267 km/h (使用者要求極速差距再縮小，原本 221～299)
+    power: 1.18, launch: [5600, 10, 65],
+    drift: { angle: 0.38, drag: 1.18, charge: 1.2, boost: 3500 },
   };
   function spec() {
     const Sp = RM.makeSpec(SPEC_OVER, { L: 4.205, W: 1.625, H: 1.335 - DROP, minZ: -2.1025, maxZ: 2.1025, clear: 0.15, zF: MAP.AXF, zR: MAP.AXR, trackF: 1.355, trackR: 1.345, tireR: TIRE_R });

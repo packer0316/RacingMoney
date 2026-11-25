@@ -108,10 +108,12 @@
       }
     },
     _hello(onlyIfChanged) {
-      const o = RM.Game.opts, sig = o.car + ':' + o.color;
+      // m：這台車的改裝代碼 (js/game/tuning.js code)，其他玩家照這個畫我的輪圈 / 彩繪 / 車高；在車庫換零件也會重送
+      const o = RM.Game.opts, m = RM.Tuning ? RM.Tuning.code(RM.Tuning.fitOf(o.car, RM.Platform && RM.Platform.mods)) : '';
+      const sig = o.car + ':' + o.color + ':' + m;
       if (onlyIfChanged && (sig === this._car || this.phase !== 'lobby')) return;
       this._car = sig;
-      this._send('hello', { car: o.car, color: o.color });
+      this._send('hello', { car: o.car, color: o.color, m });
     },
     // 房主把房名、賽道、人數登記到伺服器函式的共用資料，其他玩家的房間列表才看得到 (有變動就更新，否則每 12 秒一次)
     _reg() {
@@ -166,14 +168,18 @@
         if (e.id === this.me) { this.place(g.car, sStart, dir, e.slot); continue; }
         // 和自己同款的車共用同一份模型；其他車款另外建一份 (貼圖較小)
         const model = g.carModel && g.carModel.id === e.car ? g.carModel : RM.ProcCar.getExtra(e.car, g.atlas);
-        const veh = new RM.Vehicle(g.road, model.spec());
+        // 對方的改裝 (grid 的 m)：規格 (車高、外傾) 與外觀都照他的；沒有就是原廠
+        const spec = model.spec(), fit = RM.Tuning ? RM.Tuning.fromCode(e.m) : null;
+        if (fit) RM.Tuning.applySpec(spec, fit);
+        const veh = new RM.Vehicle(g.road, spec);
         veh.reset(sStart, dir);
         this.place(veh, sStart, dir, e.slot);
         quat.toMat3(veh.R, veh.q);
         const color = clamp(e.color | 0, 0, COL.length - 1);
+        const tuneVis = fit && RM.TuningVis ? RM.TuningVis.get(model, spec, fit, null, COL[color][1]) : null;
         const c = {
           id: e.id, k: e.k, name: e.name, carId: e.car, model, veh, slot: e.slot,
-          ctx: { car: veh, carModel: model, carAsset: null, opts: { color }, paint: RM.srgb(COL[color][1]), headOn: !!env.head, blink: { l: false, r: false, on: false, t: 0 }, cam: { name: 'chase' } },
+          ctx: { car: veh, carModel: model, carAsset: null, tuneVis, opts: { color }, paint: RM.srgb(COL[color][1]), headOn: !!env.head, blink: { l: false, r: false, on: false, t: 0 }, cam: { name: 'chase' } },
           has: false, t0: 0, offMin: Infinity, sp: veh.pos.slice(), sq: veh.q.slice(), sv: [0, 0, 0], swy: 0, steer: 0, flags: 0,
           prog: sStart, fin: false, place: 0, time: 0, gone: false, lastRecv: 0,
         };
